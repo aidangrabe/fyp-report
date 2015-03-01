@@ -1,0 +1,5 @@
+# ignore the built PDF
+/gen
+
+# ignore swap files
+*.swp

@@ -1,0 +1,52 @@
+\documentclass[12pt]{report}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES
+
+\usepackage[utf8]{inputenc}
+
+% graphics packages used for images
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+
+% used for margins and layout etc.
+\usepackage{geometry}
+
+% syntax highlighting
+\usepackage{listings}
+
+\usepackage[parfill]{parskip}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{
+    {\huge Wearable App for Students}\\
+    {\textbf{Aidan Grabe}}\\
+    {\vspace{12px}}
+    {Final Year Project}\\
+    {Computer Science}\\
+    {\vspace{12px}}
+    {\begin{figure}}
+        \includegraphics{ucc_logo.jpg}
+    {\end{figure}}
+}
+
+\author {}
+\date {
+    {Department of Computer Science}\\
+    {University College Cork}\\
+    {Co Cork}\\
+    {Ireland}\\
+    {\today}
+}
+
+\begin{document}
+
+\maketitle
+
+\input{chapters/abstract}
+
+\chapter{Introduction}
+\input{chapters/introduction}
+
+\end{document}

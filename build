@@ -1,0 +1,6 @@
+#!/bin/bash
+
+INPUT=main.tex
+DIR_OUT=gen
+
+pdflatex -output-directory "${DIR_OUT}" "${INPUT}"
