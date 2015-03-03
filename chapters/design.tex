@@ -1,0 +1,57 @@
+\section{Design}
+
+This chapter aims to give an overview of the architecture and structure of the
+main components of the project.
+
+\section{Overview}
+As previously mentioned, the project is made up of three main parts:
+\begin{enumerate}
+\item Research Project\\
+This project aims to explore the Android Wear APIs and display real world data
+obtained from the smartwatch's sensors. Since this project's sole purpose is to
+display experimental data, it's user interface is kept minimal and
+straight-forward.
+\item Weaerable Student Application\\
+This is the main project of the three and is an application for both
+smartwatches and mobile/tablet devices. It's goal is to provide students with
+a simple and easy to use app to help them keep track of their lectures and
+results whilst also demonstrating some of the newer APIs available in Android
+"Lollipop"
+\item Calendar Watchface\\
+This project provides an example of how to use the new Watchface APIs released
+by Google in January 2014. Previously, the APIs were undocumented but a working
+prototype was built in the Research Project and was converted to the new
+documented APIs in this project.
+
+\end{enumerate}
+
+\section{Package Overview}
+% explain gms packages
+TODO
+
+\section{Project Architecture}
+This section details the internal architecture of each of the three projects
+outlined above.
+
+\subsection{Research Project}
+This project contains both a smartwatch application and a mobile/tablet
+application. Three modules are used and compiled using the Gradle build system:
+\begin{enumerate}
+\item wear\\
+the module containing the wearable application source code, resources etc.
+\item mobile\\
+the same as the \texttt{wear} module but for the mobile application's code and
+resources.
+\item common\\
+the module containing the shared code, such as utility libraries and model
+objects likely to be used in both applications. This module also contains
+images, layouts and other resources that are made available to the other two
+modules.
+\end{enumerate}
+
+\subsection{Student Application}
+\subsection{Watchface}
+
+\section{User Interface}
+
+% Use cases, flow diagrams etc.?
