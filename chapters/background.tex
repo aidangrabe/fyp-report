@@ -20,11 +20,40 @@ applications and services but may need a connection to a mobile device to carry
 out certain tasks. For example, smartwatches have no internet connection and so
 will need to use the mobile device as a proxy if web-related content is needed.
 GPS is only available on select smartwatches such as the "Moto 360" and so the
-mobile device may again be useed as proxy if necessary.
+mobile device may again be used as proxy if necessary.
 It is also recommended to use the mobile device for long running, or
 computationally intensive tasks so as not to drain the wearable device's
 battery.
 
+\subsection{Application Architecture}
+An Android Wear application is bundled with a mobile application. Each
+application has it's own \texttt{AndroidManifest.xml} file and
+\texttt{res/} directory, but must use the same application id such as
+\texttt{com.example.app}. Additionally, the wearable application must declare
+the following in it's manifest:
+\begin{lstlisting}[language=XML]
+<manifest ...>
+    ...
+
+    <!-- declare that this is a smartwatch application -->
+    <uses-feature
+        android:name="android.hardware.type.watch" />
+
+    <application ...>
+        ...
+    </application>
+</manifest>
+\end{lstlisting}
+
+The two applications are kept completely separated. As a result, the smartwatch
+app does not have access to resources or code of the mobile application and
+vise-versa. This can however be achieved using the Gradle build system and
+compiling one project as a module of the other project's \texttt{build.gradle}
+file. This can be especially useful when serializing objects and sending them
+from one application to the other at runtime and not having to duplicate the
+code.
+
+\subsection{Compatibility}
 Since Android Wear uses the same base version of Android as phones and tablets,
 applications are written in Java and configured using XML just like on mobile.
 Most layouts and views work without any changes, however some input fields such
@@ -42,6 +71,41 @@ Watch R" from LG. By default, layouts will work on both rectangular and
 circular screens, but text/parts of the User Interface (UI) may be clipped
 depending on radius of the screen and the pixel density.
 
+\subsection{Communication}
+Android Wear uses Bluetooth LE (Low Energy) for communication between
+smartwatch and mobile device. Communications are secure and reliable using the
+official Android Wear API. manual cumminications over Bluetooth is still
+possible, but not recommended\footnote{Google Developers: http://goo.gl/Ke7MAu}.
+
+When communicating between mobile and watch, every communication has a URI
+attached to it. Each URI consists of a base which is specific to Android Wear
+and the current application running, and a path allows the developer to
+differentiate between different communications.
+
+The communications API consists of three different methods:
+\begin{enumerate}
+
+\item Messages\\
+Messages use the \texttt{MessageAPI} and contain small amounts of data. Messages
+are especially useful for Remote Procedure Calls (RPC) or for implementing a
+request-response model in an application. Once a message is sent/received, it
+is destroyed.
+\item Data Items\\
+Data items are used to synchronize data between the wearable and the mobile
+device. Creating a \texttt{DataItem} automatically replicates the data on the
+other side of the connection allowing for easy sharing of Java objects or data
+structures. \texttt{DataItem}s are limited to a payload of 100KB. If a bigger
+payload is required, an \texttt{Asset} can be used.
+\item Assets\\
+An \texttt{Asset} object can be attached to a \texttt{DataItem} and can contain
+a payload greater than 100KB. \texttt{Asset}s can be any blob data, and will be
+automatically replicated on the wearable or mobile by the system.
+\texttt{Asset}s are slightly different to \texttt{DataItem}s in that when
+replicated they get a file system handler allocated to them which must be used
+when reading the data back from the store.
+
+\end{enumerate}
+
 \subsection{Development Environment}
 Android Studio is the recommended Integrated Development Environment (IDE) to
 use when developing for Android Wear, although with the recent switch to the
@@ -51,7 +115,7 @@ build the application.
 
 For Android Wear to be able to communicate with a mobile device, the mobile
 device needs to have the official Android Wear companion app
-\footnote{https://play.google.com/store/apps/details?id=com.google.android.wearable.app\&hl=en}
+\footnote{Google Play Store: http://goo.gl/MvmLsV}
 installed and running. The companion app is necessary for pairing the two
 devices together in a secure way.
 
