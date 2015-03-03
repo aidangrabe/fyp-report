@@ -1,0 +1,94 @@
+\section{Introduction to Android Wear}
+
+Android Wear is a version of Google's Android operating system tailored for
+wearables. At the time of writing, Android Wear is only available for
+smartwatches, but one can assume that it will be extended to other wearable
+devices in the forseeable future.\\
+Android Wear was announced on March 18, 2014 and the first publicly available
+devices were released on June 25, 2014 at Google I/O. These devices were the
+"LG G Watch" and the "Samsung Gear Live" (not to be confused with the
+"Samsung Galaxy Gear" which is not an Android Wear device.)
+
+Upon release, Android Wear shipped running "Android 4.4W" (API 20) or "Android
+KitKat" for wearables and could communicate with mobile devices running
+"Android 4.3" (API 18) or higher. At the time of writing, the latest Android
+Wear revision is Android 5.0.2 (API 21), more commonly known as "Android
+Lollipop".
+
+Android Wear is relatively restricted in what it can do on it's own. It can run
+applications and services but may need a connection to a mobile device to carry
+out certain tasks. For example, smartwatches have no internet connection and so
+will need to use the mobile device as a proxy if web-related content is needed.
+GPS is only available on select smartwatches such as the "Moto 360" and so the
+mobile device may again be useed as proxy if necessary.
+It is also recommended to use the mobile device for long running, or
+computationally intensive tasks so as not to drain the wearable device's
+battery.
+
+Since Android Wear uses the same base version of Android as phones and tablets,
+applications are written in Java and configured using XML just like on mobile.
+Most layouts and views work without any changes, however some input fields such
+as \texttt{EditText}s are useless since the screen is too small to comfortably
+fit a keyboard.\\
+Instead of requesting input from a user in the form of text fields, it is
+favourable to use speech recognition to allow the user to input textual data.
+Some layouts and views are specific to Android Wear such as
+\texttt{WatchViewStub}, which allows the developer to select different layouts
+for square and circular screens.
+
+At the time of writing there are multiple circular screen devices on the market
+such as the first circular smartwatch, the "Moto 360" from Motorola and the "G
+Watch R" from LG. By default, layouts will work on both rectangular and
+circular screens, but text/parts of the User Interface (UI) may be clipped
+depending on radius of the screen and the pixel density.
+
+\subsection{Development Environment}
+Android Studio is the recommended Integrated Development Environment (IDE) to
+use when developing for Android Wear, although with the recent switch to the
+Gradle build system, it is still possible to build in other IDE's such as
+Eclipse, or even use no IDE at all and use the command-line Gradle wrapper to
+build the application.
+
+For Android Wear to be able to communicate with a mobile device, the mobile
+device needs to have the official Android Wear companion app
+\footnote{https://play.google.com/store/apps/details?id=com.google.android.wearable.app\&hl=en}
+installed and running. The companion app is necessary for pairing the two
+devices together in a secure way.
+
+Android Wear system images can be downloaded using Android's SDK Manager and run
+in the emulator just like the regular versions of Android. Debugging using the
+emulator is swift and easy, but has it's limitations. If the application needs
+to communicate with the mobile device, the emulator must be set up to recognize
+it. To allow the emulator to communicate with another emulator or physical
+device, the ports on the machine must be setup using the command:
+\begin{lstlisting}[language=Bash]
+$ adb -d forward tcp:5601 tcp:5601
+\end{lstlisting}
+
+When debugging with physical devices, there are three ways in which the Android
+Debugging Bridge (ADB) can access the device:
+
+\begin{enumerate}
+
+\item USB\\
+    This is the most straight-forward method for debugging and is a simple as
+    connecting the device to the development computer and ensuring the device is
+    visible to ADB and has the correct permissions to communicate with it.
+\item Bluetooth\\
+    Debugging over Bluetooth is a bit trickier to set up, and much slower in
+    terms of transferring data. The following commands are used to setup the
+    necessary ports:
+    \begin{lstlisting}
+    $ adb forward tcp:4444 localabstract:/adb-hub
+    $ adb connect localhost:4444
+    \end{lstlisting}
+\item WiFi\\
+    Debugging over WiFi is only possible with mobile devices as the wearables
+    do not have WiFi capabilities. However to setup a mobile device for
+    debugging over WiFi, the following commands are necessary:
+    \begin{lstlisting}
+    $ adb tcpip 5555
+    $ adb connect #.#.#.#:5555
+    \end{lstlisting}
+    where \texttt{\#.\#.\#.\#} is the ip address of the mobile device
+\end{enumerate}
