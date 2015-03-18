@@ -1,0 +1,218 @@
+%% IMPLEMENTATION
+
+\section{Language Choice}
+Java was the language used in implementing the applications outlined in the
+previous chapters. Android applications can be created using Java, C or C++.
+Since each application running on an Android device is executed in a Java
+Virtual Machine (JVM), Java is the primary development language used on the
+platform.\\
+C or C++ could also be used thanks to the Android NDK, but as the official
+documentation suggests\footnote{NDK documentation - http://goo.gl/OykZpe},
+should only be used for very specific, CPU-intensive tasks and one should not
+use the NDK because they prefer writing applications in C/C++.
+
+In addition to these lower-level languages, many other languages can be used
+thanks to third-party transpilers such as PhoneGap (JavaScript), Apportable
+(Objective-C/Swift), Titanium (JavaScript) etc.\\
+These tools allow developers to write code in different languages and either
+run them in a \texttt{WebView} using JavaScript and HTML5 or transpiles the
+source code into Java and compiles as if the developer had used Java in the
+first place.
+
+\section{Development Tools}
+
+\subsection{IDE}
+When it comes to Android Development, two main IDEs stand out:
+\begin{enumerate}
+\item Eclipse\\
+    Eclipse was the original official Android development environment and is
+    still used by many developers. It uses a plugin called ADT
+    (Android Development Tools) to interact with ADB and manages SDKs etc.
+\item Android Studio\\
+    Android Studio is currently the official IDE for Android and comes with
+    many improvements over Eclipse. It is built on top of the popular IntelliJ
+    IDE, and is tailored specifically for Android development. This allows it
+    to have specific Android tools and functionality 'baked in', thus not
+    requiring any plugins to begin development.\\
+    Android Studio also comes with built-in functionality for the Gradle build
+    system, allowing for easier dependency management and a more sophisticated
+    build environment.
+\end{enumerate}
+
+With Android's new Gradle build system, it is possible to use no more than a
+text editor and the Android build tools from the command line to compile and
+run an application. However, for building interfaces and the editing tools
+an IDE can offer, Android Studio was used.
+
+\subsection{Version Control}
+Android Studio has built-in support for the most popular version control
+systems. Git was chosen due to the sheer volume of libraries available on Github
+and Google's sample projects from the Android documentation site also use it.
+
+%% Communication
+
+\section{Android Wear Communication}
+
+This section details how an Android device communicates with its Android Wear
+counterpart using Bluetooth and the Android Wear APIs. Communication was a
+fundamental part of the project and is used to send messages, commands or entire
+objects from handheld to smartwatch and vice-versa.
+
+\subsection{Pre-requisites}
+In order for a smartwatch application to communicate with its counterpart
+handheld application, a few conditions must be met.
+
+\begin{enumerate}
+\item Android Wear Companion App\\
+    As mentioned in previous chapters, the official Android Wear Companion App
+    must be installed, and the wearable must connected and paired with the
+    handheld through this app.
+\item Package name
+    Both the wearable and the handheld applications must use the same package
+    name in their \texttt{AndroidManifest.xml} files. The APIs will not work
+    correctly and communication will not occur between the applications if one
+    of the package names is different.
+\end{enumerate}
+
+\subsection{Communication Types}
+With Android Wear there are two main types of communication:
+\begin{enumerate}
+\item Messages\\
+    Messages are blobs of data limited in size to 100KB, which are sent from one
+    device to another. The destination of the message must be known when
+    sending.\\
+    Messages are useful for RPC or a client-server messaging protocol.
+\item DataItems
+    DataItems are blobs of data which when created are automatically synced
+    across the Android Wear network and replicated on all connected nodes.
+    DataItems are useful for ensuring data is kept the same on both handheld and
+    wearable.
+\end{enumerate}
+
+All communication is handled by the system. The API for doing this is all dealt
+with by the \texttt{GoogleApiClient}. This API client connects to Google Play
+Services and allows for interaction with Google services, such as Android Wear,
+Play Games, Google Drive etc.\\
+As a result, multiple APIs can be accessed via a single
+\texttt{GoogleApiClient}, however, Google recommend using a single
+\texttt{GoogleApiClient} instance for dealing solely with Android Wear
+communications. This prevents failure callbacks for users that don't have a
+wearable device if they are trying to access another service.
+
+\begin{lstlisting}[language=Java]
+GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder()
+        .addApi(Wearable.API)
+        .addConnectionCallbacks(mConnectionCallbacks)
+        .addOnConnectionFailedListener(
+            mOnConnectionFailedListener)
+        .build();
+\end{lstlisting}
+
+Here we create a GoogleApiClient and tell it which API to connect to, which in
+this case is the Wearable API. We also set its connection callbacks and
+listeners.
+This allows us to get notified of connection events such as when the device is
+connected, suspended etc.
+
+\texttt{mConnectionCallbacks} and \texttt{mOnConnectionFailedListener} might
+look something like the following:
+
+\begin{lstlisting}[language=Java]
+mConnectionCallbacks = new ConnectionCallbacks() {
+    @Override
+    public void onConnected(Bundle connectionHint) {
+
+        // device has been connected succefully to the
+        // Wearable/Handheld
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+
+        // the connection has been suspended. Device out
+        // of range, or unavailable
+
+    }
+}
+
+mOnConnectionFailedListener =
+        new OnConnectionFailedListener() {
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        
+        // the connection failed to initialize
+
+    }
+}
+
+\end{lstlisting}
+
+In order to use the \texttt{GoogleApiClient}, it must be connected to Google
+Services. Here is how we achieve this with the Android Activity lifecycle:
+
+\begin{lstlisting}
+
+public class MyActivity extends Activity {
+
+    ...
+
+    @Override
+    public void onResume() {
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onPause() {
+        mGoogleApiClient.disconnect();
+    }
+
+    ...
+
+}
+
+\end{lstlisting}
+
+
+% MESSAGE APPI
+\subsection{Message API}
+
+Once the \texttt{GoogleApiClient} is connected, it can be used to send messages
+and/or \texttt{DataItem}s. In order to send a message we need the following
+information:
+
+\begin{enumerate}
+\item A connected \texttt{GoogleApiClient}.
+\item A \texttt{Node} to send the message to.
+\item A path for the message so the receiving application can decide which
+    action to apply.
+\item A payload
+\end{enumerate}
+
+All paths on Android Wear communications are relative to a base URI which Wear
+uses to communicate. These URIs are of the form:
+\texttt{wear://<node-id>/<path>}
+
+\begin{lstlisting}
+Wearable.MessageApi.sendMessage(
+        mGoogleApiClient,
+        nodeId,         // String : the id of the receiving Node
+        "/start/music", // String : the path of the message
+
+        // byte[] : the payload of the message
+        "song-123".getBytes()
+);
+\end{lstlisting}
+
+On the receiving end, when a message is received, we can check whether it's the
+message we are interested in by checking the path:
+
+\begin{lstlisting}
+...
+if (path.equals("/start/music") {
+    // open music player
+}
+\end{lstlisting}
+
+Using this technique we can send multiple different messages and perform
+different actions on the handheld based on the path of the messages.
