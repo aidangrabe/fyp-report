@@ -159,11 +159,13 @@ public class MyActivity extends Activity {
 
     @Override
     public void onResume() {
+        super.onResume();
         mGoogleApiClient.connect();
     }
 
     @Override
     public void onPause() {
+        super.onPause();
         mGoogleApiClient.disconnect();
     }
 
@@ -193,7 +195,7 @@ All paths on Android Wear communications are relative to a base URI which Wear
 uses to communicate. These URIs are of the form:
 \texttt{wear://<node-id>/<path>}
 
-\begin{lstlisting}
+\begin{lstlisting}[language=Java]
 Wearable.MessageApi.sendMessage(
         mGoogleApiClient,
         nodeId,         // String : the id of the receiving Node
@@ -207,7 +209,7 @@ Wearable.MessageApi.sendMessage(
 On the receiving end, when a message is received, we can check whether it's the
 message we are interested in by checking the path:
 
-\begin{lstlisting}
+\begin{lstlisting}[language=Java]
 ...
 if (path.equals("/start/music") {
     // open music player
@@ -216,3 +218,436 @@ if (path.equals("/start/music") {
 
 Using this technique we can send multiple different messages and perform
 different actions on the handheld based on the path of the messages.
+
+\subsubsection{Receiving Messages}
+Sending messages from the handheld to the watch or vice-versa is only useful if
+the other side is listening for these messages. In order to perform actions or
+respond received messages, the device must register itself with the Android Wear
+API and implement a callback method for when a message is received.\\
+In order to start receiving messages from the counter-part application, the
+application must register itself as a listener to the \texttt{MessageApi}:
+
+\begin{lstlisting}[language=Java]
+
+@Override
+public void onResume() {
+    super.onResume();
+    // add the listener
+    Wearable.MessageApi.addListener(mGoogleApiClient, mListener);
+}
+
+...
+
+@Override
+public void onPause() {
+    super.onPause();
+    // remove the listener
+    Wearable.MessageApi.removeListener(mGoogleApiClient, mListener);
+}
+\end{lstlisting}
+
+The listener for receiving message events looks like this:
+
+\begin{lstlisting}[language=Java]
+@Override
+public void onMessageReceived(MessageEvent messageEvent) {
+
+    // get the path of this message's URI
+    String path = messageEvent.getPath();
+
+    // perform an action based on the path
+    if (path.equals("/start/music")) {
+        // start the music application
+        Intent intent = new Intent(this, MusicActivity.class);
+        startActivity(intent);
+    }
+
+}
+\end{lstlisting}
+
+Using this send-respond architecture, a client-server model can be created
+whereby the wearable can request data from the handheld using a custom
+protocol, and the handheld can reply with the requested data.\\
+It also enables using the wearable as a remote to start activities or trigger
+actions on the handlheld, such as launching a compose new email activity or
+starting/stopping music playback.
+
+%% DATA API
+\subsection{Data API}
+Previously we discussed sending messages and performing actions upon receiving
+them. Android Wear provides another form of communication allowing developers
+to synchronize data across both the handheld and wearable. Whenever the data is
+updated on one size, an event is triggered on the other notifying it of the
+change.
+
+This is useful for sending images, or keeping data consistent across both
+devices. For example, the handheld could retrieve contact data from it's
+database using SQLite and store it in the wearable \texttt{DataApi}. Provided
+the wearable has registered itself for receiving data changes, the data would
+then present itself to the wearable where it could be displayed or stored in
+it's own SQLite database.
+
+\subsubsection{Inserting DataItems to the Data Layer}
+In order to insert something into the data layer, we must first create a
+\texttt{PutDataRequest} which is very similar to a java \texttt{Map} but that
+deals with byte arrays. To make things simpler, we can use a
+\texttt{PutDataMapRequest}, which behaves more like a traditional \texttt{Map}
+where we can store key-value pairs of primitive types.
+
+As with all communication on Android Wear, we must also specify a path for this
+data's URI. We can then hand this \texttt{PutDataMapRequest} off to the system
+for synchronization.
+
+\begin{lstlisting}[language=Java]
+// create the PutDataMapRequest with a given path
+PutDataMapRequest putDataMapRequest =
+        PutDataMapRequest.create("/settings");
+
+// get a more traditional map from the PutDataMapRequest
+DataMap dataMap = putDataMapRequest.getDataMap();
+
+// fill the map with some primitive data
+dataMap.putString("color", "#FFAAFF");
+dataMap.putFloat("rating", 4.5f);
+dataMap.putInt("refresh_interval", 20);
+
+// convert our traditional map back to a byte[] map
+PutDataRequest putDataRequest = putDataMapRequest
+        .asPutDataRequest();
+
+// hand the request off to the system to put the map
+// in the data layer
+Wearable.DataApi.putDataItem(mGoogleApiClient, dataMap);
+\end{lstlisting}
+
+In the code above, we created a map containing some basic settings and put the
+map into the data layer. This means the data will be accessible from either
+device. If the handheld or wearable are not connected or out of range, the
+system will queue the request and perform when possible. This does not have to
+be handled by the developer.
+
+\subsubsection{Retrieving DataItems from the Data Layer}
+Retrieving \texttt{DataItem}s from the data layer is slightly different. If we
+know the path of the data we want to retrieve, we can use
+
+\begin{lstlisting}[language=Java]
+Wearable.DataApi.getDataItem(mGoogleApiClient, uri);
+\end{lstlisting}
+
+where \texttt{uri} is the \texttt{URI} of the item we want to retrieve. This
+involves building the URI manually which can be cumbersome and erroneous. A
+simpler way of retrieving \texttt{DataItem}s is by fetching all items and
+filtering them by path as shown below.
+
+\begin{lstlisting}[language=Java]
+DataItemBuffer dataItemBuffer = Wearable.DataApi
+        .getDataItems(mGoogleApiClient)
+        .await();
+
+for (DataItem dataItem : dataItemBuffer) {
+    String path = dataItem.getUri().getPath();
+
+    // check we are using the correct 
+    if (path.equals("/settings")) {
+        // create a DataMapItem from the given DataItem
+        // so we can access our map
+        DataMapItem dataMapItem = DataMapItem
+                .fromDataItem(item);
+        DataMap dataMap = dataMapItem.getDataMap();
+
+        // get the settings back out of the map
+        String color = dataMap.getString("color");
+        Float rating = dataMap.getFloat("rating");
+        int refreshInterval= dataMap.getInt("refresh_interval");
+    } else if (path.equals("/other-data")) {
+        ...
+    }
+}
+
+// make sure to release the buffer to prevent leaking memory
+dataItemBuffer.release();
+\end{lstlisting}
+
+%% Data layer events
+
+\subsubsection{Data Layer Events}
+
+In order to be able to synchronize data across the handheld and wearable
+devices, listeners must be created and added to the \texttt{DataApi}. Then, 
+whenever \texttt{putDataItem()} is called, the listeners on both sides of the
+communications will be notified.
+
+For example, when the wearable application first starts, it may call
+\texttt{getDataItems()} to get all the \texttt{DataItem}s currently stored in
+the data layer and store the relevant information in memory. It might then add
+a listener to the \texttt{DataApi} in order to watch changes to this data and
+update its internal data structures for that data.
+
+\begin{lstlisting}[language=Java]
+
+@Override
+public void onResume() {
+    super.onResume();
+    Wearable.DataApi.addListener( mGoogleApiClient,
+            mListener);
+}
+
+@Override
+public void onPause() {
+    super.onPause();
+    Wearable.DataApi.removeListener( mGoogleApiClient,
+            mListener);
+}
+
+\end{lstlisting}
+
+The above code demonstrates how to add a listener for data layer events to an
+\texttt{Activity}. When the \texttt{Activity} is suspended to the background
+we genereally don't want to interact with the events. A \texttt{Service} can be
+used to interact with data layer events when the application is not in the
+foreground. This will be explained in the next section.\\
+Below is what \texttt{mListener} might look like for handling data layer events
+
+\begin{lstlisting}[language=Java]
+
+mListener = new DataApi.DataListener() {
+
+    @Override
+    public void onDataChanged(DataEventBuffer dataEventBuffer) {
+        
+        // there may be multiple events handled at once
+        for (DataEvent dataEvent : dataEventBuffer) {
+
+            // get the DataItem from the event
+            DataItem dataItem = dataEvent.getDataItem();
+            String path = dataItem.getUri().getPath();
+
+            // ignore items that we are not interested in
+            if (! path.equals("/settings") {
+                continue;
+            }
+
+            // we only want to perform actions on data that
+            // has changed
+            if (event.getType() == DataEvent.TYPE_CHANGED) {
+                DataMap dataMap = DataMapItem
+                        .fromDataItem(dataItem)
+                        .getDataMap();
+
+                // get the new settings from the map
+                String newColor = dataMap.getString("color");
+                Float newRating = dataMap.getFloat("rating");
+                int newRefresh = dataMap
+                        .getInt("refresh_interval");
+            }
+        }
+
+    }
+
+};
+
+\end{lstlisting}
+
+%% WearableListenerService
+
+\subsection{WearableListenerService}
+
+In this section communicating with wearables from a \texttt{Service} will be
+discussed. Android Wear APIs come with a special \texttt{Service} designed
+specifically for communicating with wearables:
+\texttt{WearableListenerService}.
+
+In order to use \texttt{WearableListenerService}, it must be extended by a
+custom \texttt{Service}. Just like any regular Android \texttt{Service}, it must
+first be declared in the \texttt{AndroidManifest.xml} file but with a special
+\texttt{intent-filter}:
+
+\begin{lstlisting}[language=XML]
+
+<service android:name=".DataLayerListenerService">
+    <intent-filter>
+        <action android:name=
+            "com.google.android.gms.wearable.BIND_LISTENER" />
+    </intent-filter>
+</service>
+
+\end{lstlisting}
+
+Unlike a normal Android \texttt{Service}, it must not be started or stopped.
+The system handles this.\\
+This \texttt{Service} must extend \texttt{WearableListenerService} and
+override it's communication methods. In order to listen for communication
+events, a \texttt{GoogleApiClient} must be created and the listeners must be
+attached as described in previous sections.
+
+\begin{lstlisting}[language=Java]
+
+public class DataLayerListenerService extends
+        WearableListenerService {
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        mGoogleApiClient = new GoogleApiClient.Builder()
+                ...
+                .build();
+
+        // since we are running in a Service, we can call
+        // a blocking method. Calling this on the main thread
+        // of an Activity would cause an error and the async
+        // mGoogleApiClient.connect() would have to be used
+        // instead
+        mGoogleApiClient.blockingConnect();
+
+        // attach the listeners
+        Wearable.MessageApi.addListener(mGoogleApiClient, this);
+        Wearable.DataApi.addListener(mGoogleApiClient, this);
+
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        // remove the listeners
+        Wearable.MessageApi.removeListener(mGoogleApiClient, this);
+        Wearable.DataApi.removeListener(mGoogleApiClient, this);
+
+        // ensure we disconnect from the Wearable API
+        mGoogleApiClient.disconnect();
+    }
+
+    @Override
+    public void onPeerConnected(Node peer) {
+        super.onPeerConnected(peer);
+
+        // called when the wearable and handheld have been
+        // connected
+    }
+
+    @Override
+    public void onDataChanged(DataEventBuffer dataEvents) {
+        // code to deal with changed or delete data events
+    }
+
+    @Override
+    public void onMessageReceived(MessageEvent messageEvent) {
+        // code to run when message received
+    }
+
+}
+
+\end{lstlisting}
+
+This type of \texttt{Service} allows us to listen for communication events even
+when the application is not in the foreground. This is quite a common case as
+it is quite rare that a user would have the application open on both the
+wearable and the handheld at the same time. In the Student Application discussed
+in this report, a \texttt{WearableListenerService} is created on handheld and
+acts as a server to the wearable. The \texttt{Service} could just as easily have
+been created on the wearable, or on both.
+
+
+%% ASSETS
+
+\subsubsection{Syncing Assets}
+Up to this point, syncing data and sending messages have been limited to 100KB
+in payload. In order to send data of larger size such as images or audio files,
+\texttt{Asset}s must be used. \texttt{Asset}s are attached to
+\texttt{DataItem}s and are stored and retrieved in a similar way to any other
+data stored in a \texttt{DataItem}.
+
+\begin{lstlisting}[language=Java]
+
+// get the Bitmap to send from the device's resources
+Bitmap bitmap = BitmapFactory.decodeResource(
+        getResources(), R.drawable.ic_launcher);
+
+// here we need to convert the Bitmap into an Asset
+// an Asset can be created from a byte array, so we must
+// get the byte array from the Bitmap
+ByteArrayOutputStream byteStream =
+        new ByteArrayOutputStream();
+bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
+Asset asset = Asset.createFromBytes(byteStream.toByteArray());
+
+
+// here we create a PutDataMapRequest just like we did
+// for putting primitive values into the data layer
+PutDataMapRequest putDataMapRequest =
+        PutDataMapRequest.create("/image");
+
+// get the DataMap for this PutDataMapRequest
+DataMap dataMap = putDataMapRequest.getDataMap();
+
+// add the Asset to the DataMap
+dataMap.putAsset("icon", asset);
+
+// sync the DataMap containing the Asset into the data layer
+Wearable.DataApi.putDataItem(mGoogleApiClient,
+        dataMap.asPutDataRequest());
+
+\end{lstlisting}
+
+In order to receive the Asset on the other side of the communication, we must
+implement the \texttt{DataApi.DataListener} and check for the event in
+\texttt{onDataChanged()}.
+
+\begin{lstlisting}[language=Java]
+
+...
+
+@Override
+public void onDataChanged(DataEventBuffer dataEvents) {
+
+    for (DataEvent dataEvent : dataEvents) {
+        DataItem dataItem = dataEvent.getDataItem();
+        String path = dataItem.getUri().getPath();
+
+        if (path.equals("/image")) {
+            DataMap dataMap = DataMapItem
+                    .fromDataItem(dataItem)
+                    .getDataMap();
+
+            // retrieve the Asset from the DataMap
+            Asset asset = dataMap.getAsset("icon");
+            onAssetReceived(asset);
+
+        }
+    }
+
+}
+
+private void onAssetReceived(Asset asset) {
+
+    // Assets have unique file descriptors on the device
+    // get the file descriptor for the given Asset
+    // this method is called asynchronously, to get an
+    // immediate repsonse, await() could be used, but only
+    // in a background thread
+    Wearable.DataApi.getFdForAsset(mGoogleApiClient, asset)
+            .setResultCallback(new
+                ResultCallback<DataApi.GetFdForAssetResult>()
+                    {
+
+        @Override
+        public void onResult(DataApi.GetFdForAssetResult
+                getFdForAssetResult) {
+
+            // re-construct the Bitmap from the file
+            InputStream assetInputStream =
+                    getFdForAssetResult.getInputStream();
+            Bitmap mapBitmap = BitmapFactory
+                        .decodeStream(assetInputStream);
+
+            // do something with the received Bitmap
+
+        }
+
+    });
+}
+
+...
+
+\end{lstlisting}
