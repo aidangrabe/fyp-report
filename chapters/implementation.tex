@@ -651,3 +651,234 @@ private void onAssetReceived(Asset asset) {
 ...
 
 \end{lstlisting}
+
+
+%% SERIALIZATION
+
+\subsection{Object Serialization}
+
+When communicating between handheld and wearable, a common use case might
+require a Java object to be used on both devices, for example a calendar event.
+In order to achieve this, the object must be broken down into it's primitive
+data, transfered as an array of bytes and reconstructed on the other side of
+the connection. Android has built-in interfaces for this, namely the
+\texttt{Parcelable} interface.
+
+When an object implements \texttt{Parcelable} it describes itself in terms of
+it's primitive data such as \texttt{Integer}s, \texttt{Float}s and
+\texttt{String}s. This data can then be written to a \texttt{Parcel} object and
+"marshalled" into a byte array. \texttt{Parcelable} objects can be nested within
+other \texttt{Parcelable} objects. The \texttt{Parcelable.Creator<T>} interface
+specifies how an object of type \texttt{T} should be recreated from a
+\texttt{Parcel}.
+
+For Android Wear, \texttt{DataMap}s could also be used instead of
+\texttt{Parcel}s, but since \texttt{Parcel}s are used frequently in Android
+development, such as passing an object between Activities, \texttt{Parcel}s
+may be more versatile for re-use.
+
+Below is an example of a simple object which implements \texttt{Parcelable}
+
+\begin{lstlisting}[language=Java]
+
+public class CalendarEvent implements Parcelable {
+
+    private String title;
+    private int numAttendees;
+    private Date date;
+
+    // nested Parcelable oject
+    private Parcelable myObject;
+
+    ...
+
+    // Describe the kinds of special objects contained in
+    // this Parcelable's marshalled representation
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeString(title);
+        out.writeInt(numAttendees);
+        out.writeLong(date.getTime());
+        out.writeParcelable(myObject);
+    }
+
+    // the object that will handle reconstructing the event
+    public static final Creator<CalendarEvent> CREATOR =
+            new Creator<CalendarEvent>() {
+
+        @Override
+        public CalendarEvent createFromParcel(Parcel source) {
+            // reconstruct the CalendarEvent from the given
+            // Parcel
+            CalendarEvent event = new CalendarEvent();
+            event.setTitle(source.readString());
+            event.setNumAttendees(source.readInt());
+            event.setDate(new Date(source.readLong()));
+
+            // reconstruct the nested Parcelable object
+            event.setMyObject(source.readParcelable(
+                MyObject.class.getClassLoader()));
+            return event;
+        }
+
+        @Override
+        public CalendarEvent[] newArray(int size) {
+            // create a new CalendarEvent array
+            return new CalendarEvent[size];
+        }
+
+    };
+
+}
+
+\end{lstlisting}
+
+Now when an instance of the \texttt{CalendarEvent} class is created, it can
+be put into a parcel and marshalled as follows:
+
+\begin{lstlisting}[language=Java]
+
+// get a free Parcel instance
+Parcel parcel = Parcel.obtain();
+CalendarEvent event = new CalendarEvent();
+
+// write the event into the Parcel using the methods
+// implemented above
+event.writeToParcel(parcel, 0);
+
+// set the data pointer back to the start ready for reading
+parcel.setDataPosition(0);
+
+// to then be able to transfer the Parcel with Android Wear
+DataMap dataMap = ...
+String key = "cal-event";
+dataMap.putByteArray(key, parcel.marshall());
+
+// the DataMap can then be synced using the data api or
+// message apis
+
+// recycle the Parcel when it is no longer needed
+parcel.recycle();
+
+\end{lstlisting}
+
+In order to read the serialized \texttt{Parcel} on the other side of the
+connection, a \texttt{Parcel} must be obtained, and it must unmarshall the byte
+array from the \texttt{DataMap}. Using the \texttt{CREATOR} instance created
+above, the \texttt{CalendarEvent} can be reconstructed from the \texttt{Parcel}.
+
+\begin{lstlisting}[language=Java]
+
+DataMap dataMap = ... // get the DataMap from Android Wear
+
+byte[] byteArray = dataMap.getByteArray(key);
+
+Parcel parcel = Parcel.obtain();
+
+// unmarshall the byte array into the new Parcel
+parcel.unmarshall(byteArray, 0, byteArray.length);
+
+// reset the data pointer to the start for reading
+parcel.setDataPosition(0);
+
+// read the parcel data, and create a CalendarEvent
+CalendarEvent event = creator.createFromParcel(parcel);
+
+parcel.recycle();
+
+\end{lstlisting}
+
+Of course if the code permits, a \texttt{DataMap} could be used directly instead
+of a \texttt{Parcel}, but using a \texttt{Parcel} may allow the developer to
+serialize the object for saving to disk or passing the object between processes
+or activities.
+
+
+%% Communication Threads
+\subsection{Communication Threads}
+
+The Android Wear communication APIs described in previous sections are all
+carried asynchronously with callback methods called in background threads.
+The APIs return a \texttt{PendingResult<T>} instance with the relevant
+results from the API call.
+
+Android does not allow updating of the user interface from a thread other than
+the main UI thread. In order to update the UI on a result from an Android Wear
+API call, a \texttt{Handler} must be used to post the UI code to the main UI
+thread for execution. This can be done as follows:
+
+\begin{lstlisting}[language=Java]
+
+PendingResult<MessageApi.SendMessageResult> result;
+result = Wearable.MessageApi.sendMessage(
+        mGoogleApiClient, nodeId, path, messageBytes);
+
+result.setResultCallback(new ResultCallback
+        <MessageApi.SendMessageResult>() {
+    @Override
+    public void onResult(MessageApi.SendMessageResult result) {
+        // called on a background thread when the message
+        // has been sent
+        onMessageResult(result);
+    }
+});
+
+private void onMessageResult(final String result) {
+
+    // perform non-UI logic here
+    doSomething();
+
+    // perform UI logic here
+    (new Handler(Looper.getMainLooper())).post(new Runnable() {
+        @Override
+        public void run() {
+            mTextView.setText("Result: "
+                + result.getStatus().toString());
+        }
+    });
+
+}
+
+\end{lstlisting}
+
+In order to run the UI logic on the main thread, a \texttt{Runnable} is posted
+to the main \texttt{Handler} and gets scheduled for processing.
+
+If an Android Wear comunications API method is called from a thread that is
+already running in the background, there is no need to use callbacks at all.
+\texttt{PendingResult}s have an \texttt{await()} method which blocks execution
+until the result is ready for processing. If multiple API calls need to be made
+in immediate succession, it might make sense to run them all on a background
+thread and just use one callback for the overall result. This can be achieved
+using an \texttt{AsyncTask}. The \texttt{await()} method cannot be run on the
+main thread, if it is, the application will crash and throw an exception.
+
+\begin{lstlisting}[language=Java]
+
+(new AsyncTask<Void, Void, Void>() {
+    
+    @Override
+    protected Void doInBackground(Void... params) {
+        // make API calls
+        MessageApi.SendMessageResult result;
+        result = Wearable.MessageApi.sendMessage(
+            mGoogleApiClient, nodeId, path, messageBytes).await();
+        if (result.getStatus().isSuccess() {
+            // make another API call
+        }
+    }
+
+    @Override
+    protected void onPostExecute(Void aVoid) {
+        // execute callback method here
+        // this method runs on the UI thread
+    }
+
+}).execute();
+
+\end{lstlisting}
