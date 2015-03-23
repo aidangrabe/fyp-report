@@ -882,3 +882,145 @@ main thread, if it is, the application will crash and throw an exception.
 }).execute();
 
 \end{lstlisting}
+
+
+%% SENSORS
+
+\section{Sensors}
+
+Sensors allow devices to read data from the outside world. Applications can use
+sensor data to monitor real-time data and perform actions on it, or present it
+to the user in a more digestible way.
+
+Android supports measuring raw data from many different types of sensors. The
+availability of sensors depends on the device and version of Android it is
+running. Android Wear is no different. Android Wear allows for the same APIs
+to be used in detecting and measuring data from built-in sensors.
+
+Android Wear provides the user with access to sensors a regular Android device
+might not have access to. This project was carried out and tested on a
+Samsung Gear Live device. On this device, there is a heart-rate monitor which
+can measure the rate at which the heart beats by using a bright LED on the back
+of the watch to illuminate the top of your wrist and measure the rate of the
+pulsing of the blood.\\
+This method requires the wearer to be completely still and that the LED be
+completely clean to give an accurate reading. Even when these conditions are
+met, there is still a certain skepticism as to how accurate this type of
+monitor really is.
+
+In any case, Android Wear provides the same APIs for accessing sensors on a
+wearable as those used to achieve the same on a handset. The
+\texttt{SensorManager} is used to query the availability of different
+\texttt{Sensor}s at runtime. A \texttt{Sensor} object then provides methods
+allowing you to discover the capabilities and retrieve information regarding
+the underlying sensor such as resolution, maximum range.\\
+The \texttt{SensorManager} also allows us to attach listeners to each sensor
+to listen for events related to the sensor, such as when the accuracy of the
+sensor changes or when the values of the sensor are updated or changed by the
+underlying hardware for the sensor.
+
+The below code listing demonstrates how one might sense heart-rate data from
+a wearable device. The code could also be run on a handset device with no
+errors, but would not return any data unless it was equipped with a heart-rate
+monitor.
+
+\begin{lstlisting}[language=Java]
+
+public class HeartRateActivity extends Activity
+        implements SensorEventListener {
+
+    // the SensorManager is used to retrieve the heart-rate
+    // sensor
+    private SensorManager mSensorManager;
+
+    // this is the heart-rate sensor itself which will be
+    // used to measure the raw data
+    private Sensor mHeartSensor;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        mSensorManager = (SensorManager)
+                getSystemService(SENSOR_SERVICE);
+
+        // ask the SensorManager for a heart-rate sensor
+        // if there is no heart rate sensor present, this
+        // will return null
+        mHeartSensor = mSensorManager
+                .getDefaultSensor(Sensor.TYPE_HEART_RATE);
+
+    }
+
+    @Override
+    public void onResume() {
+        // start listening for events on the heart sensor
+        mSensorManager.registerListener(this, mHeartSensor,
+                SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    public void onPause() {
+        mSensorManager.unregisterListener(this,
+            mHeartSensor);
+    }
+
+
+
+    @Override
+    public final void onAccuracyChanged(Sensor sensor,
+            int accuracy) {
+        // called when the accuracy of the sensor has changed
+    }
+
+    @Override
+    public final void onSensorChanged(
+            SensorEvent event) {
+        // event.values can be more than one
+        // eg. accelerometer returns 3 values
+        float heartRate = event.values[0];
+
+        Log.d("HeartRateActivity", String.format(
+            "Received heart rate %.0f", heartRate));
+    }
+
+}
+
+\end{lstlisting}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{heart-rate-monitor-activity.png}
+    \caption{Activity monitoring heart-rate}
+    \label{fig:awesome_image}
+\end{figure}
+
+If a higher degree of accuracy is needed, a higher sample rate can be specified
+for measuring the raw sensor data. It should be noted however, that selecting a
+higher sampling rate can consume more power than a slower sampling rate. As a
+result it is recommended to use a high sampling rate only when necessary.\\
+In the above example the default sampling rate of
+\texttt{SensorManager.SENSOR\_DELAY\_NORMAL} was used. The available sampling
+rates are listed below:
+\begin{enumerate}
+\item SENSOR\_DELAY\_NORMAL (default) - 200ms
+\item SENSOR\_DELAY\_UI - 60ms
+\item SENSOR\_DELAY\_GAME - 20ms
+\item SENSOR\_DELAY\_FASTEST 0ms
+\end{enumerate}
+
+When attempting to listen on a sensor that is not available, the system should
+continue running. When an application requires the use of a specific sensor,
+that is to say the application needs it to function, it should declare so in
+it's \texttt{AndroidManifest.xml} file. eg.
+
+\begin{lstlisting}[language=XML]
+
+<uses-feature
+    android:name="android.hardware.sensor.accelerometer"
+    android:required="true" />
+
+\end{lstlisting}
+
+Note that this is not necessary, but would help filter capable devices on the 
+Google Play Store if submitted.
