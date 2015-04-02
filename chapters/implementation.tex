@@ -1024,3 +1024,251 @@ it's \texttt{AndroidManifest.xml} file. eg.
 
 Note that this is not necessary, but would help filter capable devices on the 
 Google Play Store if submitted.
+
+
+
+%% STUDENT APP
+
+\section{Student Application}
+
+The following section will describe the implementation of the Student
+Application for handheld devices and it's wearable counterpart app. The handheld
+app consists of a main menu (shown in Figure \ref{fig:handheld_main_menu}) which displays all the
+available sections of the app.
+
+The handheld application uses SQLite for it's database, and uses the open source
+Sugar ORM\footnote{Sugar ORM: http://satyan.github.io/sugar/} for it's
+Object-Relational mapping capabilities. This allows much easier storage of Java
+objects in a relational database and Sugar ORM provides much of the database
+boilerplate code through the use of Reflection.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{mobile-main-screen.png}
+    \caption{Handheld main menu}
+    \label{fig:handheld_main_menu}
+\end{figure}
+
+The sections of the app are as follows:
+\begin{enumerate}
+\item Modules\\
+    This screen allows the user to manage their modules or subjects for
+    college. They can add or remove different modules which are then used by
+    other screens within the app.
+\item To-do list\\
+    The user can create reminders and to-do items in this screen. To-do items
+    can be created, removed or marked as completed. These to-do items are also
+    synced across to the wearable where they can be viewed and marked as
+    complete.
+\item Timetable\\
+    In this screen, the user can view their timetable. Lectures are created on
+    this screen and contain a title, room, day and time.
+\item Results\\
+    Results for each module are displayed on this screen and new results can be
+    added or removed in sub screens.
+\item News\\
+    This screen displays the recent news from the UCC website
+    \footnote{UCC News page: http://www.ucc.ie/en/about/uccnews/} in the form
+    of a native Android list, the articles are shown when the article image or
+    headline is clicked by the user.
+\item Games\\
+    This section contains only one game on the handheld, and that is a game of
+    Snake. The Snake game is played using wearables or other mobile devices as
+    controllers and is played over Bluetooth.
+\end{enumerate}
+
+\subsection{Modules}
+When the user creates a new module, a \texttt{Module} object is created. This
+\texttt{Module} instance is also \texttt{Parcelable}. The new instance is stored
+in the handheld device's SQLite database. All modules in this database are then
+read into a \texttt{List}, parceled up, and synced to the wearable device.
+
+In order to sync the whole list over to the weearable, the objects in the list
+must implement \texttt{Parcelable}. Once the list is put into the data layer of
+Android Wear, the wearable can read and display the list of modules by calling
+\texttt{Wearable.DataApi.getDataItems} and filtering by the path of the modules
+which in this case is \texttt{"/modules/get"}.
+
+Although using this method to synchronize the modules to the wearable works,
+and works quite quickly as the module objects are small in sie and quick to
+transfer. It is not the most optimal method for syncing the modules. A better
+approach woould be to implement a database on the wearable device as well as the
+handheld and only put the new module object into the data layer when it is
+created. This means that only one module object would be transfered when a new
+module is created rather than the entire list.
+
+However, using this method would require a database on both sides of the
+connection, and would also require the wearable application to be running a
+\texttt{WearableListenerService} to be able to spot the changes to the data
+layer when the wearable app is not in the foreground. This is a lot of extra
+complexity for a list of modules, that realistically should never reach over
+10-15 modules. If the dataset was much larger, the more efficient solution
+would be a far better approach and would be a noticeably better user experience.
+
+\subsection{To-Do List}
+The to-do list is implemented rather similarly to the Modules screen. The major
+difference between the screens is that to-do list items can be created on the
+wearable device as well as the handheld. This means that while the application
+is in the foreground on the handheld, the dataset might change after it has been
+retrieved from the database.
+
+\subsubsection{Creating items on the wearable}
+Creating to-do items on the handheld is straight-forward. An \texttt{EditText}
+is used to get the title of the to-do item and it is stored in the database.
+However, since the wearable's screen is too small to house a full-blown
+keyboard, another form of input must be used.
+
+The only alternate way of getting textual input from the user on a wearable is
+to use the user's voice as input. Android Wear comes with APIs for doing exactly
+that. The wearable uses a \texttt{SpeechRecognizer} activity which listens for
+the user's voice and returns the speech data to the calling Activity.
+
+\begin{lstlisting}[language=Java]
+
+// Create an intent that can start the Speech Recognizer activity
+private void displaySpeechRecognizer() {
+    Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+    // Start the activity, the intent will be populated with the speech text
+    startActivityForResult(intent, SPEECH_REQUEST_CODE);
+}
+
+\end{lstlisting}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{wearable-speech-recognizer.png}
+    \caption{SpeechRecognizer Activity}
+    \label{fig:speech_recognizer_activity}
+\end{figure}
+
+Calling \texttt{displaySpeechRecognizer()} above will start a system Activity
+(Figure \ref{fig:speech_recognizer_activity})
+which will display a screen which reads "Speak now". This screen will wait for
+the user to speak, display the text it has heard, or "Sorry, didn't catch that".
+This text is then returned to the calling Activity for processing.
+
+In order to create a module from this text, we must override the
+\texttt{onActivityResult()} method of the Activity. This is achieved as
+follows:
+
+\begin{lstlisting}[language=Java]
+
+// This callback is invoked when the Speech Recognizer returns.
+@Override
+protected void onActivityResult(int requestCode, int resultCode,
+                                Intent data) {
+    if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
+        List<String> results = data.getStringArrayListExtra(
+                RecognizerIntent.EXTRA_RESULTS);
+        String spokenText = results.get(0);
+
+        // only create a new item if the string is non-empty
+        if (spokenText.length() > 0) {
+            ToDoItem item = new ToDoItem(spokenText);
+            syncToDoItem(item);
+        }
+    }
+    super.onActivityResult(requestCode, resultCode, data);
+}
+
+\end{lstlisting}
+
+\subsubsection{Syncing the items}
+
+When a new to-do list item is created on the handheld, it is stored in the
+database and synced to the wearable in the same way as a module is synced in
+the previous section. This means that the wearable can access the entire list
+of to-do items from the Android Wear data layer. However, if the user creates
+a new to-do item on the wearable, the wearable stores the new to-do item in the
+data layer at a different path. The handheld needs to be able to see this change
+and store the new to-do item in it's database. This is made possible by the
+\texttt{WearableListenerService} implemented on the handheld. When data is
+changed in the data layer by the wearable, its \texttt{onDataChanged()} method
+is called and if the path matches the path of the new item created by the
+wearable, it can read the item from the data layer and store it in the SQLite
+database. It will also update the list of to-do items in the data layer so the
+wearable, on subsequent calls to \texttt{Wearable.DataApi.getDataItems}, will
+get the most recent list of to-do items, including the item that was just
+created on the wearable.
+
+To-do items are now synced between both devices, but if the user creates an
+item on the wearable while the handheld application is in the foreground, we
+want the handheld's user interface to update with the new item. This is an
+unlikely use-case that the user would have both applications in the foreground,
+but is definitely a possibility.\\
+To solve this issue, the \texttt{Fragment} displaying the to-do items on the
+handheld can implement \texttt{DataApi.DataListener} in order to spot changes
+to the data layer. When the fragment spots a change on the path 
+\texttt{"/todo/create"}, it can update its list's \texttt{Adapter} and refresh
+the data displayed to the user.
+
+This change was also applied to the wearable application as it is also possible
+to create a to-do item on the handheld while the wearable app is in the
+foreground. Once both sides have the change applied, the user can create to-do
+items on either side of the connection with both apps in the foreground and see
+the changes immediately on both UIs.
+
+\subsection{Timetable}
+
+The timetable screen displays the user's lectures for the week in the form of
+tabbed lists. Each day is its own tab and displays the days lectures in order
+of earliest first. New lectures can be created by pressing the Floating Action
+Button in the bottom right corner. Only days that have lectures are displayed in
+the timetable, that is if the user has not created lectures for Saturday and
+Sunday, they will not appear on the screen.
+
+Each lecture is stored in the SQLite database using Sugar ORM. Using Sugar ORM
+is a very simple. In order for a Java object to be stored in the database using
+Sugar ORM, it must extend \texttt{SugarOrm<T>} where \texttt{T} is the class
+that will be stored. For example, the \texttt{Lecture} class looks something
+like this:
+
+\begin{lstlisting}[language=Java]
+
+public class Lecture extends SugarRecord<Lecture> {
+
+    private String name;
+
+    // an empty constructor is required by Sugar ORM
+    public Lecture() {}
+
+}
+
+\end{lstlisting}
+
+In the above listing, name will be a column in the database and an instance will
+automatically populate it in the database with it's value when it is stored
+using Java Reflection. If the object contains data that should not be inserted
+into the database upon storage, it can be ignored using the \texttt{@Ignore}
+annotation. For example:
+
+\begin{lstlisting}[language=Java]
+
+private long id;
+
+// ignore the password attribute
+@Ignore
+private String password;
+
+private String title;
+
+\end{lstlisting}
+
+\texttt{Lecture} objects can now be stored by calling \texttt{lecture.save()}.
+In order to retrieve lectures from the database using the ORM, we can use
+\texttt{Lecture.findById(Lecture.class, id)} to find a particular lecture once
+it's id is known, or \texttt{Lecture.findAll(Lecture.class)} to list all
+lectures currently stored in the database.
+
+The timetable screen is unique to the handheld device and does not have any
+counterpart on the wearable. This is mainly down to the limited screen
+real estate available on the wearable. Instead however, notifications are used
+to display upcoming lectures. This is achieved using Android's
+\texttt{AlarmManager} to schedule a task every 10 minutes to check the created
+lectures and see if any are occuring within the next 15 minutes. If a lecture
+is starting in this time, a notification is built and displayed on both the
+handheld and wearable devices. When the notification is clicked, the timetable
+Activity is opened.
+
