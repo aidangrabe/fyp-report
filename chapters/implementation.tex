@@ -1026,6 +1026,80 @@ Note that this is not necessary, but would help filter capable devices on the
 Google Play Store if submitted.
 
 
+%% Notifications
+\section{Notifications}
+
+Notifications are a key part of Android Wear as they are not applications which
+need to be launched by the user. They are a way of displaying small glanceable
+information to the user that can have certain quick-actions such as replying
+to a text message, or opening an application on the heandheld in order to
+complete a larger action. Notifications are at the heart of what Android Wear
+is designed for and are easily created and displayed using the Android APIs.
+
+By default, a notification built for a handheld application will display on
+Android Wear without any modifications. They can however be "extended" to show
+information that would be displayed specifically for wearable devices.
+
+\begin{lstlisting}[language=Java]
+
+// the intent to start when the notification is clicked
+Intent intent = new Intent(this, TimetableActivity.class);
+
+// build the notification
+NotificationCompat.Builder notificationBuilder =
+        new NotificationCompat.Builder(this)
+        .setSmallIcon(R.drawable.ic_notif)
+        .setContentTitle("Sample Notification")
+        .setContentText("This is a sample notification")
+        .setContentIntent(viewPendingIntent);
+
+// get an instance of the NotificationManager service
+NotificationManagerCompat notificationManager =
+        NotificationManagerCompat.from(this);
+
+notificationManager.notify(notificationId, notificationBuilder.build());
+
+\end{lstlisting}
+
+The code listing above describes how to build a notification that can be
+displayed on a handheld device. By default, this notification will also get
+displayed on the wearable. In order to add wearable specific-features to the
+notification, we use a \texttt{WearableExtender}:
+
+\begin{lstlisting}[language=Java]
+
+// Create a WearableExtender to add functionality for wearables
+NotificationCompat.WearableExtender wearableExtender =
+        new NotificationCompat.WearableExtender()
+        .setBackground(mBitmap);
+
+// extend the notification with the wearable-specific features
+notificationBuilder.extend(wearableExtender);
+
+// display the notification
+notificationManager.notify(notificationId, notificationBuilder.build());
+
+\end{lstlisting}
+
+Here we can set the background of the notification which will be displayed on
+the wearable. This background will not get displayed on any handheld devices.
+By default adding actions to the notification will also work on the wearable,
+but sometimes it is desirable to show certain actions only on the wearable, such
+as "Open on phone". This action should not be displayed in the notification of
+the phone itself. This can be accomplished by using the \texttt{extend()} method
+of the \texttt{NotificationBuilder}
+
+\begin{lstlisting}[language=Java]
+
+new NotificationCompat.Builder(mContext)
+        .setSmallIcon(R.drawable.ic_message)
+        .setContentTitle(getString(R.string.title))
+        .setContentText(getString(R.string.content))
+
+        // add wearable only actions
+        .extend(new WearableExtender().addAction(action));
+
+\end{lstlisting}
 
 %% STUDENT APP
 
@@ -1271,4 +1345,91 @@ lectures and see if any are occuring within the next 15 minutes. If a lecture
 is starting in this time, a notification is built and displayed on both the
 handheld and wearable devices. When the notification is clicked, the timetable
 Activity is opened.
+
+\subsection{Results}
+The results screen displays a list of the user's modules with an animated
+progress bar showing their average result for each module. Clicking on a module
+brings the user to a new screen which displays each result for that module in
+reverse-chronological order. This screen also displays an animated graph of
+each of the results so the user can see their progress at a glance.
+
+The graph is a custom view which overrides the \texttt{onDraw()} method and uses
+paths to create the shape of the graph. Each vertex of the graph is animated
+from the 50\% mark and the animation is offset by the vertex's x position so
+each vertex animation begins a few milliseconds after the previous vertex's
+animation has begun.
+
+This custom view was created in the \texttt{common} module so that the view
+could be used on both the handheld and wearable device. The main reason for
+the addition of this graph was to see how the wearable could handle custom views
+and animations. The animations run smoothly and without problem on both devices.
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{mobile-results.png}
+    \caption{Custom Graph View on handheld}
+    \label{fig:mobile_results}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{wearable-results.png}
+    \caption{Custom Graph View on wearable}
+    \label{fig:wearable_results}
+\end{figure}
+
+The animations were achieved using Android's \texttt{ValueAnimator} class. This
+class enables us to animate particular values from a start value to an end
+value. To animate the results, each vertex in the graph is set to show 50\% and
+is then animated to it's actual value.
+
+\begin{lstlisting}[language=Java]
+
+public void animateValues() {
+    mAnimations = new ArrayList<>();
+    for (int i = 0; i < mValues.size(); i++) {
+        final float value = mValues.get(i);
+        final int index = i;
+        ValueAnimator anim = ValueAnimator.ofFloat(.5f, value);
+
+        // offset each animation by 100 ms
+        anim.setStartDelay(500 + (100 * i));
+        anim.setDuration(1500);
+
+        // make each vertex start fast and slow down
+        anim.setInterpolator(new DecelerateInterpolator(3f));
+        anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                // update the value of the vertex
+                mValues.set(index, (float) animation.getAnimatedValue());
+                invalidate();
+            }
+        });
+
+        // start each vertex at 50%
+        mValues.set(i, .5f);
+
+        anim.start();
+        mAnimations.add(anim);
+    }
+}
+
+\end{lstlisting}
+
+In order for the wearable to get the results of a given module from the
+handheld, it retrieves a list of results from the data store in the same way
+as for the modules. The path for the results is
+\texttt{"/results/get/<module-id>"} where module-id is the id of the module to
+get the results of. When a new result is added on the handheld application, the
+result is stored in the database using Sugar ORM. The application then reads all
+results for that module into a \texttt{List} and stores that list in the data
+layer with the path \texttt{"/results/get/3"} where 3 would be the id of the
+module. The wearable can then access these lists of results by calling
+\texttt{getDataItems()} and filtering on the same path.
+
+As mentioned previously if the dataset is large, the entire list should not be
+synced, just the items that have changed and should be stored on both sides of
+connection.
 
