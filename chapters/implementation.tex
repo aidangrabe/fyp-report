@@ -1552,20 +1552,6 @@ public interface ArticleFetcher {
 
 \end{lstlisting}
 
-Since the wearable is not able to download articles itself, and reading an
-article would be difficult on such a small screen, a service is scheduled to
-run in the background every 2 hours using the Android \texttt{AlarmManager}.
-This service runs the \texttt{UccArticleFetcher} and downloads the articles
-from the UCC news page. It checks each article title and stores the most recent
-article's title in \texttt{SharedPreference}s. If the previously stored article
-title is different to the one just downloaded, a notification is shown to the
-user on both the handheld and wearable device. The wearable notifications
-background is set to the image of the article
-(Figure \ref{fig:wearable_news_notification}) and a specific action
-(Figure \ref{fig:wearable_open_on_phone}) is shown
-to the user which when clicked (or touched) it will open the particular article
-on the user's handheld device.
-
 \begin{figure}
     \centering
     \includegraphics[width=0.4\textwidth]{wearable-notification-open-on-phone.png}
@@ -1583,3 +1569,235 @@ on the user's handheld device.
     \label{fig:handheld_news_screen}
 \end{figure}
 
+Since the wearable is not able to download articles itself, and reading an
+article would be difficult on such a small screen, a service is scheduled to
+run in the background every 2 hours using the Android \texttt{AlarmManager}.
+This service runs the \texttt{UccArticleFetcher} and downloads the articles
+from the UCC news page. It checks each article title and stores the most recent
+article's title in \texttt{SharedPreference}s. If the previously stored article
+title is different to the one just downloaded, a notification is shown to the
+user on both the handheld and wearable device. The wearable notifications
+background is set to the image of the article
+(Figure \ref{fig:wearable_news_notification}) and a specific action
+(Figure \ref{fig:wearable_open_on_phone}) is shown
+to the user which when clicked (or touched) it will open the particular article
+on the user's handheld device.
+
+
+%% Games
+
+\clearpage
+\section{Games}
+
+As part of the student application, a few games were developed and designed to
+be short and simple to play. The following games were developed as part of the
+student appliction:\\
+Wearable:
+\begin{enumerate}
+\item Lights Out\\
+    A puzzle game where the user is presented with a grid of lights, some of
+    which are in the on state. The goal is to turn off all the lights by
+    clicking them, but when turning off a light, that light's neighbours are
+    turned on.
+\item Minesweeper\\
+    A puzzle game where the player must locate a given number of mines in a
+    grid of squares. Squares that do not contain a mine display the number of
+    adjacent squares which do contain mines. The goal is to flag all the mines
+    by analyzing the numbers and not clicking any square with a mine.
+\item Game Controller\\
+    Not a game, but a controller that sends bluetooth commands for up, down,
+    left and right. Used for the multiplayer game of snake on the handheld, but
+    could be used by any Bluetooth game that implements the protocol.
+\end{enumerate}
+
+Handheld:
+\begin{enumerate}
+\item Multiplayer Snake\\
+    A game of Snake similar to the snake game preloaded on Nokia phone in 1998
+    with Bluetooth multiplayer where each player controls a different snake and
+    the aim is to be the last snake that hasn't crashed.
+\end{enumerate}
+
+
+\subsection{Lights Out}
+
+Lights Out
+\footnote{Lights Out Wikipedia: http://en.wikipedia.org/wiki/Lights\_Out\_\%28game\%29}
+(Figure \ref{fig:lights_out_game})
+is a puzzle game where the goal is to turn off all lights on the screen. It is
+a grid based game and so was a perfect fit for the square screen of the watch.
+However, on a circular watch screen the game is un-playable as the squares in
+the corners are truncated of screen and so cannot be clicked.
+
+The game was implemented using a Model View Controller (MVC) approach. The
+model is a simple \texttt{Tile} class consisting of the tile's position and
+state. The view is a canvas-based custom view that displays the grid and the
+tiles contained within the grid. And finally the controller is the 
+\texttt{LightsOutController} class which controls the access to the models,
+and translates input into actions on the view and state of the game.
+
+This MVC pattern allows us to swap out any part for a different implementation.
+The low coupling between the controller and the view allows us to change the
+view from being canvas-based to an XML layout of buttons and images for example
+with little to no code changes.
+
+The game controller keeps track of an array of tiles which form the grid. Each
+tile has a position and state: on or off. When starting the game a level can
+be selected from the menu. Levels are stored as strings in the form "OOXOO...".
+These strings are processed character by character moving over the grid square
+by square. The first character of the level string is applied to the first
+square in the grid, the second character on the second square etc.\\
+An "O" character means skip this square, a "X" means click this square. The
+controller processes each character until the game has been initialized with
+some lights, which the player has to reverse. The benefit of creating levels in
+such a way, is that we know the optimal number of moves needed in order to
+complete the level, that is, reverse the moves performed by the initialization
+of the level string. Using this optimal number of moves we can then keep track
+of the number of moves the player makes and calculate a score based on some
+algorithm.
+
+Due to the small size of the wearable screen, we are limited in the number of
+tiles we can display in the grid whilst still keeping the tiles large enough
+for the player to click without accidentally clicking the wrong tile. As a
+result levels are limited in complexity and size to about 5x5 grids.
+
+In the implementation of the game, the Activity is used as a middle man between
+the controller and the view. The Activity is responsible for taking input from
+the user and passing the information to the controller. The Activity is also
+a registered listener of the controller and can update the view using the
+defined callback methods specified by the \texttt{LightsOutController\$Listener}
+interface shown below. In this way, the Activity acts as the glue between the
+view and the controller.
+
+\begin{lstlisting}[language=Java]
+
+// interface defined within the LightsOutController class
+public interface Listener {
+    // called when a tile was clicked
+    public void onTileToggled(Tile tile);
+
+    // called when all lights have been turned off
+    public void onGameOver(int numMoves);
+}
+
+\end{lstlisting}
+
+When a level is complete, the score is calculated and a success view is shown
+to the user displaying their score. This view is a \texttt{ConfirmationActivity}
+(Figure \ref{fig:success_screen})
+which is a built-in Android Wear Activity designed for showing the user a quick
+message that dismisses itself quickly. It is the recommended way of showing the
+user quick information that an action has been complete, without distracting
+them too much from their current task.
+
+\subsection{Minesweeper}
+
+Minesweeper\footnote{Minesweeper Wikipedia: http://en.wikipedia.org/wiki/Minesweeper\_\%28video\_game\%29}
+(Figure \ref{fig:minesweeper}) is a puzzle game where the objective is to clean
+a mine field by flagging the mines. It is a grid based game where a given amount
+of mines are scattered acros the grid randomly and it is up to the player to
+click on all squares apart from the ones containing mines. To help the player
+achieve this, squares that do not contain mines display how many neighbouring
+squares contain mines when clicked. Using these numbers, the player must decide
+which squares to click and which squares to flag as mines. The game is over when
+the player clears all non-mine squares or clicks a square containing a mine, in
+which case the game is lost.
+
+The game is built similarly to Lights Out in that it is grid based and contains
+tiles. It also uses the MVC pattern explained above, but in this case an Android
+layout is used instead of a canvas-based custom view. This layout contains a
+single root \texttt{LinearLayout} element which is populated by other 
+\texttt{LinearLayout}s at runtime, depending on how many rows are specified by
+the controller. These \texttt{LinearLayouts} are then populated with custom
+buttons which extend the android \texttt{Button} class depending on how many
+columns the controller has specified. This allows the layout to be just as
+dynamic as the canvas-based view used for Lights Out, but with the added benefit
+of being aple to handle input/clicks for each individual button in the grid,
+rather than having to figure out where the player clicked and decide which
+button was hit.
+
+\texttt{activity\_grid.xml}:
+\begin{lstlisting}[language=Java]
+
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/grid_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+</LinearLayout>
+
+\end{lstlisting}
+
+It does however increase complexity, and adding views at runtime is more
+error-prone than creating the views at compile time in XML where a GUI can be
+used to preview what the layout will eventually look like. For describing how
+views should be layed out programmatically in Android, \texttt{LayoutParams}
+must be used and can be cumbersome and verbose. The rows and buttons are added
+to the grid as follows:
+
+\begin{lstlisting}[language=Java]
+
+// setup the minesweeper grid view
+// here rootView is the root LinearLayout
+private void setupView(LinearLayout rootView) {
+
+    // the layout params for the buttons
+    LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
+
+    // add a new view for each row
+    for (int y = 0; y < mRows; y++) {
+
+        // layout params for the row views
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
+
+        // the row view itself
+        LinearLayout rowLayout = new LinearLayout(getApplicationContext());
+        rowLayout.setOrientation(LinearLayout.HORIZONTAL);
+        rowLayout.setLayoutParams(rowParams);
+
+        // create the buttons for each row
+        for (int x = 0; x < mCols; x++) {
+
+            // create the button
+            GridButton button = createButton(x, y);
+            button.setOnClickListener(mButtonClickListener);
+            button.setLayoutParams(buttonParams);
+
+            // callback for the controller
+            onButtonCreated(button);
+            
+            // add the button to the row view
+            mGrid[x][y] = button;
+            rowLayout.addView(button);
+        }
+
+        // add the row to the grid
+        rootView.addView(rowLayout);
+    }
+}
+
+\end{lstlisting}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{wearable-lights-out.png}
+    \caption{Lights Out game}
+    \label{fig:lights_out_game}
+    \includegraphics[width=0.4\textwidth]{wearable-minesweeper.png}
+    \caption{Minesweeper}
+    \label{fig:minesweeper}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{wearable-success-screen.png}
+    \caption{Success Screen}
+    \label{fig:success_screen}
+\end{figure}
