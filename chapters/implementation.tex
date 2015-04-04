@@ -1433,3 +1433,153 @@ As mentioned previously if the dataset is large, the entire list should not be
 synced, just the items that have changed and should be stored on both sides of
 connection.
 
+%% News
+
+\subsection{News}
+
+The news screen first scrapes the UCC news page
+\footnote{UCC News page: http://www.ucc.ie/en/about/uccnews/} by downloading it,
+parsing it using the \texttt{JSoup} library to find the news article titles and
+images. It then displays the articles in a list using the new
+\texttt{RecyclerView} which was introduced to Android in Lollipop and is
+designed as a more flexible and versatile \texttt{ListView}. It implements the
+\texttt{View Holder} pattern, making it more efficient by recyling (hence the
+name) views rather than inflating a new view from XML every time a new item
+appears on screen. The \texttt{RecyclerView} also has the added benefit of using
+\texttt{LayoutManager}s to decide where and how items should appear. This makes
+it easy to switch from single column lists to multi-column lists or grids.
+
+Each article appears as an image with a title on the news screen. When one of
+the articles is clicked, a new screen is shown with the article's contents. To
+achieve this, a webview is populated with the contents of the article. The app
+downloads the articles web page, and parses the HTML for the \texttt{\#content}
+container in the webpage. This way the UCC website itself is not shown, just
+the contents of the article.
+
+Android provides many ways of downloading content using Http requests. This
+project uses the open source
+Volley\footnote{Volley library: http://developer.android.com/training/volley/index.html}.
+This library makes downloading things very easy, without having to worry about
+closing connections, or configuration changes causing the Activity to restart.
+Since Android does not allow network acticity on the main thread, network
+requests must be made on a background thread. For this reason many applications
+might use an \texttt{AsyncTask} to download content, but this may cause problems
+when the user rotates the phone, restarting the Activity and causing the 
+\texttt{AsyncTask} to get 'lost'. This could be fixed by wrapping the
+\texttt{AsyncTask} in a \texttt{Fragment} and calling
+\texttt{setRetainInstance(true)} on the fragment to prevent it from being
+restarted by the containing Activity, but Volley can handle all of this for us.
+
+Downloading the UCC news page looks as follows:
+\begin{lstlisting}[language=Java]
+
+public static final String BASE_URL = "http://www.ucc.ie";
+public static final String ALL_ARTICLES_URL = BASE_URL + "/en/news/";
+
+...
+
+mArticleRequest = MyVolley.getInstance(mContext).add(new StringRequest(
+        ALL_ARTICLES_URL, new Response.Listener<String>() {
+    @Override
+    public void onResponse(String response) {
+        // this will get called when we get a successful response
+        parseResponse(response);
+    }
+}, new Response.ErrorListener() {
+    @Override
+    public void onErrorResponse(VolleyError error) {
+        // this gets called when an error is returned from Volley or
+        // the server
+        onError();
+        Log.e("E", "Error downloading: " + ALL_ARTICLES_URL);
+    }
+}));
+
+\end{lstlisting}
+
+\texttt{MyVolley} is just a simple wrapper for Volley a \texttt{RequestQueue}.
+It is a singleton class that returns a single \texttt{RequestQueue} when 
+\texttt{getInstance()} is called. \texttt{RequestQueue} objects are used to
+queue downloads using Volley.\\
+Parsing the articles from the returned HTML response looks like this:
+
+\begin{lstlisting}[language=Java]
+
+ArrayList<Article> articles = new ArrayList<>();
+
+// parse the document using Jsoup
+Document doc = Jsoup.parse(response);
+
+// using CSS selectors we can extract an array of the articles in HTML
+Elements articleElements = doc.select(".article");
+
+// loop through each HTML article and create a Java object and add it
+// to the List
+for (Element element : articleElements) {
+    Article article = createArticle(element);
+    if (article != null) {
+        articles.add(article);
+    }
+}
+
+\end{lstlisting}
+
+This screen was designed in such a way so that any news source could be used to
+populate the list of articles. A custom interface called \texttt{ArticleFetcher}
+can be implemented and replace the \texttt{UccArticleFetcher} class to download
+the articles from a different source. For example, a college could replace it
+with a \texttt{ArticleFetcher} that fetched articles from an Rss feed. Or
+implement the code to scrape their own website and populate the screen with
+articles. The \texttt{ArticleFetcher} interface is defined below.
+
+\begin{lstlisting}[language=Java]
+
+public interface ArticleFetcher {
+
+    // callback listener for when the articles are ready
+    public interface Listener {
+        // called when the articles are downloaded and ready to be displayed
+        public void onArticlesReady(List<Article> articles);
+    }
+
+    // ask the ArticleFetcher to start downloading the articles
+    public void fetchArticles(Listener callback);
+
+    // stop the downloading of the articles
+    public void cancel();
+
+}
+
+\end{lstlisting}
+
+Since the wearable is not able to download articles itself, and reading an
+article would be difficult on such a small screen, a service is scheduled to
+run in the background every 2 hours using the Android \texttt{AlarmManager}.
+This service runs the \texttt{UccArticleFetcher} and downloads the articles
+from the UCC news page. It checks each article title and stores the most recent
+article's title in \texttt{SharedPreference}s. If the previously stored article
+title is different to the one just downloaded, a notification is shown to the
+user on both the handheld and wearable device. The wearable notifications
+background is set to the image of the article
+(Figure \ref{fig:wearable_news_notification}) and a specific action
+(Figure \ref{fig:wearable_open_on_phone}) is shown
+to the user which when clicked (or touched) it will open the particular article
+on the user's handheld device.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{wearable-notification-open-on-phone.png}
+    \caption{Open on phone action of notification}
+    \label{fig:wearable_open_on_phone}
+    \includegraphics[width=0.4\textwidth]{wearable-news-notification.png}
+    \caption{New article notification with background image of article}
+    \label{fig:wearable_news_notification}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=.6\textwidth]{mobile-news-screen.png}
+    \caption{News screen with UCC articles}
+    \label{fig:handheld_news_screen}
+\end{figure}
+
