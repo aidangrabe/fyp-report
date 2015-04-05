@@ -1856,3 +1856,268 @@ The controllers can send the following messages on their
 "down"      => move the snake down
 
 \end{lstlisting}
+
+
+
+%% Watchface
+
+\section{Custom Watchface}
+
+The final part of the project was the implementation of a custom watchface using
+the official Android Wear APIs. At the beginning of the project, these APIs were
+not finalized nor made made publicly available, so an attempt was made to use
+whatever made the watchface work. A decent attempt was made, but did not follow
+the guidelines which were later released, and so the code was updated to follow
+these
+guidelines\footnote{ttps://developer.android.com/design/wear/watchfaces.html}
+and use the officially released APIs instead.
+
+\subsection{Overview}
+
+A custom watchface, is a service that runs constantly on the wearable. It is the
+equivalent of the homescreen on a handheld device as it is the first thing the
+user sees when the device is woken. A watchface has the added benefit of also
+being able to display things on screen when the device is not woken, but in a
+low-power mode so the user can constantly see the time. This mode is called
+"Ambient Mode" and is triggered when the user is no longer interacting with the
+watch. In Ambient mode, the watchface should be wary of saving power. As such,
+it should only update the display when necessary and should avoid displaying
+too much colour or white pixels in order to avoid pixel burn-in.
+
+A watchface cannot handle input as it is the screen used by the system to carry
+out system-default functions, such as launching an app or pulling down the
+quick settings toggles. Overriding these functions would be discouraged and
+confusing for the user.
+
+Watchfaces use two extra permissions, which must be declared in the
+\texttt{AndroidManifest.xml} file. These permissions are used because the
+watchface needs to be able to run in the background and keep the processor
+active to execute it's code.
+
+\begin{lstlisting}[language=Java]
+
+<manifest ...>
+
+    <!-- watchface permission -->
+    <uses-permission
+        android:name="com.google.android.permission.PROVIDE_BACKGROUND" />
+
+    <!-- permission to wake the processor when device is not active -->
+    <uses-permission
+        android:name="android.permission.WAKE_LOCK" />
+    ...
+</manifest>
+
+\end{lstlisting}
+
+\subsection{Watchface API}
+
+Android Wear provides a Service class which can be extended to create a
+watchface. This class is a very barebones implementation, and the
+programmer is left to implement much of the boilerplate code. An easier class
+to extend is the \texttt{CanvasWatchFaceService} which is also provided by
+Android Wear, but gives the programmer access to a \texttt{Canvas} object which
+can be drawn to for easy displaying of graphics. Other wise OpenGL would have
+to be used, which is a more powerful graphics API than canvas, but also has
+much steeper learning curve as it is much lower level.
+
+The \texttt{CanvasWatchFaceService} looks as follows:
+\begin{lstlisting}[language=Java]
+
+public class AnalogWatchFaceService extends CanvasWatchFaceService {
+
+    @Override
+    public Engine onCreateEngine() {
+        // the Engine is the class that will handle all watch-related tasks
+        // and will also handle rendering to the screen
+        return new Engine();
+    }
+
+    /* implement service callback methods */
+    private class Engine extends CanvasWatchFaceService.Engine {
+
+        @Override
+        public void onCreate(SurfaceHolder holder) {
+            super.onCreate(holder);
+            // called when the Engine is created
+        }
+
+        @Override
+        public void onPropertiesChanged(Bundle properties) {
+            super.onPropertiesChanged(properties);
+            // called when the properties of the watchface have been altered
+        }
+
+        @Override
+        public void onTimeTick() {
+            super.onTimeTick();
+            // called every minute
+        }
+
+        @Override
+        public void onAmbientModeChanged(boolean inAmbientMode) {
+            super.onAmbientModeChanged(inAmbientMode);
+            // called when the device goes in or out of Ambient Mode
+        }
+
+        @Override
+        public void onDraw(Canvas canvas, Rect bounds) {
+            // called when the Engine is invalidated
+        }
+
+        @Override
+        public void onVisibilityChanged(boolean visible) {
+            super.onVisibilityChanged(visible);
+            // called when the watchface is no longer visible, ie. when the
+            // user is in an app or the watchface is no longer in the
+            // foreground
+        }
+    }
+}
+
+\end{lstlisting}
+
+As you can see above, the system calls the \texttt{onTick} method every minute.
+This may be enough when the device is in Ambient mode, but in order to show the
+seconds hand on the clock, we will want to update the display every second while
+not in Ambient mode. This must be implemented by the programmer, and this is how
+it is done in the Calendar Watchface for this project:
+
+\begin{lstlisting}[language=Java]
+
+// delay in milliseconds
+private static long TICK_DELAY = 1000;
+
+private Handler mTimeTick;
+
+// this task will be run every second
+private final Runnable mSecondTick = new Runnable() {
+    @Override
+    public void run() {
+        onSecondTick();
+        if (isVisible() && !isInAmbientMode()) {
+            mTimeTick.postDelayed(this, TICK_DELAY);
+        }
+    }
+};
+
+...
+
+private void startTimer() {
+    // cancel the current timer
+    mTimeTick.removeCallbacks(mSecondTick);
+    if (isVisible() && !isInAmbientMode()) {
+        mTimeTick.post(mSecondTick);
+    }
+}
+
+@Override
+public void onCreate() {
+    
+    // start a task on the UI thread
+    mTimeTick = new Handler(Looper.myLooper());
+    startTimer();
+
+}
+
+public void onAmbientModeChanged(boolean inAmbientMode) {
+    // reset the timer
+    startTimer();
+}
+
+public void onSecondTick() {
+    // code to be run every second
+    if (isVisible() && !isInAmbientMode()) {
+        invalidate();
+    }
+}
+
+\end{lstlisting}
+
+Here we use a \texttt{Handler} object to post \texttt{Runnable} objects to the
+UI thread. In this case we are executing this runnable every second and
+refreshing the display if the watchface is visible and not in Ambient mode.
+
+\subsection{Drawing on the Canvas}
+
+Drawing on the canvas is the same as drawing on a canvas for a custom view in
+Android. \texttt{Paint} objects are used for stroking shapes in different styles
+and colours. Detecting whether the screen is round or square is slightly
+trickier than in a regular Android Wear app. In a normal app, a
+\texttt{WatchViewStub} stub can be used to automatically apply a given layout
+depending on the shape of the display as shown below:
+
+\begin{lstlisting}[language=XML]
+
+<android.support.wearable.view.WatchViewStub
+    ...
+    app:rectLayout="@layout/rect_activity_my_wear"
+    app:roundLayout="@layout/round_activity_my_wear"
+    ...
+>
+
+\end{lstlisting}
+
+However, since the watchface is a service, it cannot inflate views to display on
+screen. Instead, it must be done programatically. In order to achieve this, a
+custom \texttt{WindowInsetsListener} must be created. This listener will be
+given enough information to deterine the shape of the screen. This can be useful
+for the application to know, so it can draw things on a particular region of the
+canvas to endure that it is visible on all screen shapes. A custom listener is
+shown below:
+
+\begin{lstlisting}[language=Java]
+
+view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+    @Override
+    public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+        if (insets.isRound()) {
+            // ROUND SCREEN
+        } else {
+            // SQUARE SCREEN
+        }
+        return insets;
+    }
+});
+
+\end{lstlisting}
+
+In order to draw text and shapes at certain locations on the watch, we must use
+trigonometry to draw them at the correct locations on the canvas. For example,
+in order to draw the numbers of a clock along the outside of the clock, sin and
+cos must be used as follows:
+
+\begin{lstlisting}[language=Java]
+
+// incase we wanted a 24 hour clock
+int numNumbers = 12;
+
+mLength = // the radius of the clock
+
+// start at 1 to have numNumbers at the top instead of 0
+for (int i = 1; i <= numNumbers; i++) {
+    float x, y;
+    x = (float) Math.sin(Math.PI * 2 * (i / (float) numNumbers)) * mLength;
+    y = - (float) Math.cos(Math.PI * 2 * (i / (float) numNumbers)) * mLength;
+    canvas.drawText(String.format("%d", i),
+        mCenter.x + x, mCenter.y + y,
+        mPaint);
+}
+
+\end{lstlisting}
+
+\subsection{Calendar Events}
+
+The custom watchface developed for this project displays the user's calendar
+events along the circumference of the watchface as long coloured arcs. Howevever
+the wearable device does not directly have access to the handheld's calendar.
+As a result there are two main ways to get the calendar events to the watch.
+\begin{enumerate}
+\item Manually\\
+    Use the \texttt{MessageApi} to request the handheld to send the calendar
+    events over to the wearable using the \texttt{DataApi} to store the objects.
+\item WearableCalendarContract
+    Use Android Wear's built in \texttt{WearableCalendarContract} to query the
+    calendar directly from the wearable. This gives the programmer access to the
+    \texttt{Cursor} instance with the results of the query.
+\end{enumerate}
