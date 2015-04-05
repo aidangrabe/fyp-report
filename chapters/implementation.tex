@@ -1695,7 +1695,7 @@ them too much from their current task.
 Minesweeper\footnote{Minesweeper Wikipedia: http://en.wikipedia.org/wiki/Minesweeper\_\%28video\_game\%29}
 (Figure \ref{fig:minesweeper}) is a puzzle game where the objective is to clean
 a mine field by flagging the mines. It is a grid based game where a given amount
-of mines are scattered acros the grid randomly and it is up to the player to
+of mines are scattered across the grid randomly and it is up to the player to
 click on all squares apart from the ones containing mines. To help the player
 achieve this, squares that do not contain mines display how many neighbouring
 squares contain mines when clicked. Using these numbers, the player must decide
@@ -1801,3 +1801,58 @@ private void setupView(LinearLayout rootView) {
     \caption{Success Screen}
     \label{fig:success_screen}
 \end{figure}
+
+
+\clearpage
+\subsection{Multiplayer Snake}
+
+The final game developed for this project was a game of Multiplayer
+Snake\footnote{Snake Wikipedia: http://en.wikipedia.org/wiki/Snake\_\%28video\_game\%29}.
+The game is played over Bluetooth with one handheld acting as the game's screen
+while the wearables/other handhelds act as the controllers. The game can be
+played with 1-7 players as Bluetooth has a limit on how many devices can be
+connected at one time. This limit, however can be raised to 255 by using a
+Piconet\footnote{http://en.wikipedia.org/wiki/Piconet}.
+
+A Piconet consists of one master device, the screen/handheld device in this case
+and up to seven slave devices, the controllers in this case. To raise the seven
+slave device limit, slaves can be set in "parked" mode where they are inactive
+but still part of the Piconet. We could swap devices in and out of parked mode
+to give the appearance that all devices are active, when in actual fact only
+seven are active at any one time. As a result we could connect up to 255 slave
+or controller devices. However, having 255 players in a game of Snake would not
+be playable!
+
+The objective of this version of Snake, is to be the last player alive. Each
+player controls a different snake, and must eat the food (a red square) in order
+to make their snake longer. A snake dies when it's head collides with it's own
+or another snakes body. Longer snakes can try and trap other snakes by boxing
+them in. The winner is the last snake that has not crashed.
+
+This game uses raw Bluetooth sockets as Android Wear does not allow multiple
+wearables to connect to a single handheld device. The connection is one-to-one
+which means that one handheld cannot have multiple wearables and vice-versa.
+Due to this limitation, raw Bluetooth sockets were used. Google advises against
+doing this, but as a multiplayer game cannot be multiplayer with only one
+controller device, a workaround had to be implemented.
+
+As a result of not using Android Wear APIs for the game, a protocol had to be
+invented for the controllers to communicate with the master device. The master
+device waits for controllers to connect. When a controller wants to connect, it
+uses the pre-defined \texttt{uuid} of the master device to create a
+\texttt{BluetoothSocket} for the master. The master creates a separate thread
+for each controller it connects to. Each thread has a unique identifier which
+it uses to differentiate which player sent which message.
+
+\subsubsection{Bluetooth Controller Protocol}
+
+The controllers can send the following messages on their
+\texttt{BluetoothSockets} to have the following effects on that player's snake.
+
+\begin{lstlisting}[language=Java]
+"left"      => move the snake left
+"right"     => move the snake right
+"up"        => move the snake up
+"down"      => move the snake down
+
+\end{lstlisting}
