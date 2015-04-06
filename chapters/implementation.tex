@@ -1026,13 +1026,100 @@ Note that this is not necessary, but would help filter capable devices on the
 Google Play Store if submitted.
 
 
+%% Gestures
+
+\clearpage
+\section{Gestures}
+
+Android Wear smartwatches come with accelerometers and gyroscopes, this means
+the devices can distinguish their orientation in 3d space. Using these sensors
+we can determine movement or gestures by the user, just like on a smartphone.
+Smartwatches have the added benefit of being located on a user's wrist, the
+perfect spot for detecting gestures created by the user's arm. One of the goals
+of this project was to be able to detect simple linear gestures ie. when
+the user thrusts their arm up, down, left, right, forwards or backwards.
+
+Listening to the accelerometer data is the same as listening to any other sensor
+on the device which is explained in the previous section. However, detecting 3d
+gestures is not straight forward, and very few libraries exist for detecting
+such gestures. An accelerometer measures the acceleration on 3 different axes: 
+x, y and z as shown in figure \ref{fig:accelerometer_axes}. Gestures in this
+project are detected by waiting for a value of x, y or z from the accelerometer
+to exceed a certain threshold. Since the values of x, y and z can be negative
+or positive, some calculations must be done first in order to determine on
+which axis the gesture occurred.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{watch-axes.png}
+    \caption{Three axes of the accelerometer}
+    \label{fig:accelerometer_axes}
+\end{figure}
+
+\begin{lstlisting}[language=Java]
+
+double, absX, absY, absZ, biggest;
+absX = Math.abs(x);
+absY = Math.abs(y);
+absZ = Math.abs(z);
+
+// get the largest value
+biggest = Math.max(Math.max(absX, absY), absZ);
+
+// see if the largest value is above the minimum threshold
+if (biggest > GESTURE_THRESHOLD) {
+    // do gesture detection
+}
+
+\end{lstlisting}
+
+The above method works fairly well for ignoring small movements and accidentally
+triggering a gesture, but if the user does a fast movement to trigger a gesture
+in one direction, an equal but opposite gesture will be triggered almost
+immediately after as the user's hand come to a stop. In order to ignore this
+second stopping gesture, a delay is used after registering the first gesture, so
+no gestures can be detected until after this delay. This prevents the pair of
+gestures from being detected together. Care must be taken to use a threshold
+high enough so that the second gesture is ignored, but low enough so that a
+second unique gesture is not accidentally missed as well. In tests, 700ms to
+1 second seemed to be an adequate delay.
+
+Once the threshold as been exceeded, we know a gesture has occurred, the next
+step is to figure out which axis the gesture occurred on. This can be checked
+using a simple multi-arm conditional statement.
+
+\begin{lstlisting}[language=Java]
+
+String gestureLessThan, gestureGreaterThan;
+double val = x;
+
+// check which axis the gesture occurred on
+if (absY == biggest) {
+    gestureLessThan     = "DOWN";
+    gestureGreaterThan  = "UP";
+    val = y;
+} else if (absZ == biggest) {
+    gestureLessThan     = "FORWARDS";
+    gestureGreaterThan  = "BACKWARDS";
+    val = z;
+} else {
+    gestureLessThan     = "LEFT";
+    gestureGreaterThan  = "RIGHT";
+}
+
+// decide whether the movement was positive or negative
+String gesture = val > 0 ? gestureGreaterThan : gestureLessThan;
+Log.d("DEBUG", "Gesture: " + gesture);
+
+\end{lstlisting}
+
 %% Notifications
 \section{Notifications}
 
 Notifications are a key part of Android Wear as they are not applications which
 need to be launched by the user. They are a way of displaying small glanceable
 information to the user that can have certain quick-actions such as replying
-to a text message, or opening an application on the heandheld in order to
+to a text message, or opening an application on the handheld in order to
 complete a larger action. Notifications are at the heart of what Android Wear
 is designed for and are easily created and displayed using the Android APIs.
 
