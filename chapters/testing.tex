@@ -1,0 +1,53 @@
+In this chapter, the testing performed on the Student Application and Calendar
+Watchface will be discussed. Testing was performed throughout the development
+of the project and no new features were added in the last week before
+completion, just testing and error/bug fixing.
+
+\section{Overview}
+
+The following testing was performed on the project:
+\begin{enumerate}
+\item Unit Testing\\
+    Individual units of code tested with as many inputs as possible to ensure
+    they work as expected.
+\item Performance Testing\\
+    Testing the performance of Android Wear and different methods of
+    communication to see which methods were more efficient and more responsive.
+\item Usability Testing\\
+    Day to day testing as well as testing by third parties just by using the
+    apps as regular users and logging or reporting bugs when/if they occurred.
+\end{enumerate}
+
+\section{Unit Testing}
+
+Since the source code for the project is written in Java, JUnit was used and
+easily integrated into the project's workflow. Test cases for individual classes
+were written, trying different inputs and edge cases or unlikely cases were
+tested to ensure the class could handle the input.
+
+Unit tests can only really be performed on strictly Java code, however testing
+can be performed on Android views and state using Android's built-in testing
+framework. This framework allows you to test whether views are visible, input
+was received and things a unit test might not be able to test.
+
+\section{Performance Testing}
+TODO
+
+\section{Usability Testing}
+Usability testing was performed by using the application on a day to day basis.
+Using the application as a normal user might, and loggin bugs as they appeared.
+The project is hosted on Github, which also has a built-in issue tracker. When
+a bug appeared during regular use, it would be logged on paper if not near an
+internet-facing device, or logged directly into the Github issue tracker where
+it could be assigned a category and tag and where it's state would be logged so
+it would not be forgotten.
+
+Testing was also performed by third parties such as friends and family. They
+would follow the same reporting process by logging issues in the tracker, or
+by keeping note of the issues themselves, and passing them on when appropriate.
+
+Due to the nature of a watchface being always visible to the user, it was easy
+for people to test as it was always in the foreground, and if something went
+wrong, it was immediately noticeable as the watchface might restart or stop
+altogether, so the next time the user checked the time, they'd know there was
+a problem and could forward on the logs and the stack-trace of the crash.
