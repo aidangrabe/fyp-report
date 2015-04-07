@@ -1232,6 +1232,11 @@ The sections of the app are as follows:
     \footnote{UCC News page: http://www.ucc.ie/en/about/uccnews/} in the form
     of a native Android list, the articles are shown when the article image or
     headline is clicked by the user.
+\item Campus Map\\
+    This section is only contained on the wearable app and is designed to have
+    the coordinates of the UCC campus preloaded onto the handheld, which then
+    downloads images of the map from Google Maps and displays them on the
+    wearable in case the user is lost on campus.
 \item Games\\
     This section contains only one game on the handheld, and that is a game of
     Snake. The Snake game is played using wearables or other mobile devices as
@@ -1669,6 +1674,143 @@ background is set to the image of the article
 (Figure \ref{fig:wearable_open_on_phone}) is shown
 to the user which when clicked (or touched) it will open the particular article
 on the user's handheld device.
+
+
+%% Campus Map
+
+\clearpage
+\section{Campus Map}
+
+This screen is only available on the wearable and was added in case the student
+gets lost on campus and needs a quick glance at the map to get their bearings
+back. The screen contains a custom view \texttt{BitmapRegionView} which was
+created with the goal of displaying a region of a large bitmap which can be
+scrolled around to view the whole bitmap. It works by creating a \texttt{Rect}
+object as a source input from the bitmap, and moving this \texttt{Rect} object
+around the bitmap and drawing the region to the screen. The scrolling is done
+using a \texttt{GestureDetector} object and listening for the \texttt{onFling}
+method to be triggered. This view allows a large map image to be displayed at
+full quality on a small screen and allows the user to pan around the large image
+at will.
+
+Since the wearable is not able to connect to the internet, it must ask the
+handheld device for the map image. It does so by using the \texttt{MessageApi}
+to send a message requesting the map image. When the handheld receives this
+request, it makes an API call to
+\texttt{http://maps.google.com/maps/api/staticmap} endpoint. This endpoint
+allows us to download a static image of a location by providing a latitude and
+longitude of the location as parameters. Zoom and map size can also be
+specified for more control over the downloaded image. This image is then synced
+to the wearable using the \texttt{DataApi}. The wearable app then displays this
+large image using the custom \texttt{BitmapRegionView} implemented for this
+purpose.
+
+Originally this screen used a \texttt{GridViewPager} to display the map bitmap.
+This is a wearable specific view that gives us a grid of pages which can be
+scrolled through both horizontally and vertically. Each page was displaying
+a chunk of the bitmap, but this view, since designed for wearables, behaved
+in an unfavourable way when scrolling vertically. In a grid, one might expect
+that when scrolling vertically, the column number would stay the same and the
+row number would change by 1. However with a \texttt{GridViewPager} the row
+number resets to 0 when scrolling vertically, so it does not function exactly
+how one might think a grid would function. For this reason the custom view
+\texttt{BitmapRegionView} was created.
+
+Since this Activity uses a \texttt{GestureListener} to detect swipes, the
+system default of swiping from the left to go back to the previous screen was
+negatively affecting swiping to see different parts of the map. Since this is
+the default behaviour, it should only be overridden if unavoidable. Thankfully,
+Android Wear has provided a second alternative way of closing a screen if the
+back-gesture is not an option, and that is a long-press anywhere on the screen.
+In order to implement this, the back-gesture must be disabled and the long-press
+must be listened for in the Activity instead. In order to disable the
+back-gesture, a rule must be secified in the style of that Activity.
+
+\texttt{AndroidManifest.xml}
+\begin{lstlisting}[language=XML]
+
+<application ...>
+
+    <!-- set a style on the Activity -->
+    <activity
+            android:name=".activities.MapActivity"
+            android:theme="@style/NoSwipeBack" />
+
+</application>
+
+\end{lstlisting}
+
+\texttt{styles.xml}
+\begin{lstlisting}[language=XML]
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="NoSwipeBack" parent="Theme.Wearable">
+        <!-- disable the back-gesture -->
+        <item name="android:windowSwipeToDismiss">false</item>
+    </style>
+</resources>
+
+\end{lstlisting}
+
+Now that the back-gesture is disabled, the user has no way of leaving the
+\texttt{MapActivity}. We must now implement the long-press gesture instead.
+Android Wear has a built in view that can be displayed when a long-press has
+occurred called \texttt{DismissOverlayView}. This view can display a message
+when the Activity is first launched instructing the user about the long-press
+to go back gesture. When the long-press occurs, it then dimisses the screen
+automatically. In order to set the \texttt{MapActivity} uo to use this view, we
+must create an instance of the view in the \texttt{onCreate} method and add
+the view to our layout XML file.
+
+\texttt{activity\_map.xml}
+\begin{lstlisting}[language=XML]
+
+<android.support.wearable.view.DismissOverlayView
+        android:id="@+id/dismiss_overlay"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"/>
+
+\end{lstlisting}
+
+\texttt{MapActivity.java}
+\begin{lstlisting}[language=Java]
+
+// create the DismissOverlayView
+mDismissOverlay = (DismissOverlayView) findViewById(R.id.dismiss_overlay);
+
+// set the text that will be shown if the user has never been to
+// this screen before
+mDismissOverlay.setIntroText("Long press to exit");
+mDismissOverlay.showIntroIfNecessary();
+
+
+// add the long-press gesture to the BitmapRegionView
+mBitmapRegionView.setLongClickListener(new View.OnLongClickListener() {
+    @Override
+    public boolean onLongClick(View v) {
+        mDismissOverlay.show();
+        return false;
+    }
+});
+
+\end{lstlisting}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{wearable-map.png}
+    \caption{Map region shown on watch}
+    \label{fig:wearable_map}
+    \includegraphics[width=0.4\textwidth]{wearable-exit-activity.png}
+    \caption{DismissOverlayView with long-press gesture}
+    \label{fig:wearable_dismiss_overlay}
+\end{figure}
+
+Now when the user first enters the screen, they will be presented with a pop-up
+describing how to exit the Activity. When they long-press the
+\texttt{BitmapRegionView}, they will be presented with another pop up with a
+large 'X' as shown in figure \ref{fig:wearable_dismiss_overlay} which when
+clicked will perform the equivalent of the back-gesture we disabled.
 
 
 %% Games
@@ -2208,3 +2350,5 @@ As a result there are two main ways to get the calendar events to the watch.
     calendar directly from the wearable. This gives the programmer access to the
     \texttt{Cursor} instance with the results of the query.
 \end{enumerate}
+
+
