@@ -31,7 +31,47 @@ framework. This framework allows you to test whether views are visible, input
 was received and things a unit test might not be able to test.
 
 \section{Performance Testing}
-TODO
+The performance of the Student Application is not too critical as the
+application does not undertake any heavy duty or long processing tasks. The only
+area which may cause the user to notice the performance of the application is
+the communication between the handheld and wearable device. If the communication
+gets blocked or hangs, then the user will be stuck with a blank screen instead
+of the task they were meant to see.
+
+In order to test the performance of the communications, tests were set up to 
+explore which type of communication was the quickest and most efficient. There
+are three main ways to communicate between the handheld and wearable devices,
+and they are:
+\begin{enumerate}
+\item MessageApi
+\item DataApi
+\item Raw Bluetooth
+\end{enumerate}
+
+The outcome of the tests were that Raw Bluetooth was the quickest way to get
+data from A to B as it has no overhead attached. However, since it is not
+handled by the system, all the protocol details are left to the programmer which
+means it can be muc more error-prone than using the Android Wear APIs.
+
+The MessageApi was the next most efficient form of communication, but has the
+drawback that the payload is limited in comparison to using Assets synced in the
+DataApi. It's faster because it has less overhead than the DataApi, however it
+is less reliable than the DataApi as messages are not guaranteed to reach their
+target. Say for example, that the wearable was out of range of the handheld, and
+a message was sent to the handheld. The message would probably not reach the
+handheld and error checking and handling would need to done by the programmer to
+ensure that no data is lost and the message get reset later if neccessary.
+
+The DataApi was the slowest method of communication, but also the most reliable.
+It also allows payloads of over 100KB to be transferred by attaching Assets to
+DataItems. This meant that it might actually be more efficient for large
+transfers rather than trying to chunk an array of bytes and send them via
+Bluetooth or the MessageApi manually.
+
+As a result of these tests, different tasks could change their method of
+communication to fit these results. Lightweight communication could be left to 
+the MessageApi and larger, heavier communication would be handled by the
+DataApi.
 
 \section{Usability Testing}
 Usability testing was performed by using the application on a day to day basis.
