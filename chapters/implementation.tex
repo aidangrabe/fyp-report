@@ -2316,6 +2316,7 @@ trigonometry to draw them at the correct locations on the canvas. For example,
 in order to draw the numbers of a clock along the outside of the clock, sin and
 cos must be used as follows:
 
+\clearpage
 \begin{lstlisting}[language=Java]
 
 // incase we wanted a 24 hour clock
@@ -2351,4 +2352,14 @@ As a result there are two main ways to get the calendar events to the watch.
     \texttt{Cursor} instance with the results of the query.
 \end{enumerate}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{calendar-watchface.png}
+    \caption{The custom Watchface in action}
+    \label{fig:calendar_watchface}
+\end{figure}
 
+Combining the features described above, the custom watchface retrieves the
+user's events from the handheld, wraps them into objects and displays them on
+the canvas using the standard Canvas APIs. Figure \ref{fig:calendar_watchface}
+depicts the final outcome.
