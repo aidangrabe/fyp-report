@@ -1,1 +1,81 @@
+In this chapter, the accomplishments of the project will be reviewed and
+discussed. It will also discuss the potential for future developments.
 
+\section{Overview}
+
+This project met all of its original requirements and provides a detailed view
+of the brand new technology that is Android Wear. At the time of writing there
+were few quality, extensive, detailed guides on using Android Wear. This
+dissertation aims to provide such a guide by explaining the use of the APIs and
+demonstrating them by providing a sample application that students may also find
+useful.
+
+The project offers the following features:
+\begin{enumerate}
+\item A detailed description of the Android Wear communication APIs
+\item Examples of how to create notifications that work on both a handheld
+    device but also on a wearable.
+\item Examples of how to poll sensors and use their data for displaying to 
+    a user or performing calculations based on their values.
+\item Performing actions based on 3d gestures performed by the user.
+\item A useable application that helps students stay on top of their studies
+    by helping them track their lectures, result progress, college news,
+    track their tasks.
+\item A few wearable games that were designed with a small screen in mind.
+\item An example of how multiple wearables can be used together to create a 
+    multiplayer game of Snake.
+\item A watchface that can show the user their events for the day at a quick
+    glance.
+\item An example of how to build a custom watchface which adheres to the Google
+    watchface guidelines and that works on both circular and rectangular
+    watches.
+\end{enumerate}
+
+The project demonstrated the use of many different tools and technologies:
+\begin{enumerate}
+\item the applications were written using Java and the Android and Android
+    Wear APIs.
+\item Android Studio was used for the IDE.
+\item Git was used for version control.
+\item Gradle was used as the build system.
+\item Bluetooth Low Energy is the underlying technology that makes the
+    communication between handheld and wearable possible.
+\item Bluetooth sockets were used to work around the one-to-one device
+    restriction of Android Wear.
+\item AppCompat libraries were used to ensure compatability with older versions
+    of Android.
+\item Android L specific features were used such as colouring the status bar.
+\end{enumerate}
+
+\section{Future Work}
+
+At the time of writing, Android Wear was a brand new technology in it's infancy.
+The project started using Android 4.4W and in the space of the short development
+window for this project, has already moved up to Android 5.0.2. As a result many
+changes will be made to the APIs in a short space of time. Here are some changes
+that may be possible in the future or just for further development:
+
+\begin{enumerate}
+\item Support for multiple wearable devices to connect to a single phone
+\item Support for communicating with the new iteration of Google Glass
+\item Support for other Google technologies such as Android TV and Android Auto.
+\item WiFi built in to the wearables. Currently many smartwatches use a
+    Snapdragon 400 series as their SoC (System on Chip), many of which support
+    wireless technologies such as Wi-Fi. At the time of writing, Android Wear
+    does not support access to this technology, but will be implementing it in
+    a later iteration. This means that much of the code in this project that
+    accesses internet resource could be re-written to download the resource
+    directly to the wearable isntead of using the handheld as a proxy.
+\item More games could be added to the student application. Currently there is
+    only one game for the handheld device, and users may want a couple more.
+\item the Student Application could be extended to support devices without
+    wearables. Currently the application is only available to devices using 
+    Android 4.3+. This is because it is Android Wear's minimum requirement.
+    However many of the features of the handheld application do not require
+    a wearable, and so the mimimum version could be lowered and
+    wearable-specific content could be hidden to those users.
+\item Other wearable devices may be announced and supported by Android Wear,
+    such as smart-shoes, smart-necklace etc. These devices may run Android Wear
+    and as a result may be integrated with the current applications. For example
+    students could track their walking efficiency to college using smart-shoes.
+\end{enumerate}
