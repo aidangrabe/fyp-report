@@ -25,33 +25,6 @@ It is also recommended to use the mobile device for long running, or
 computationally intensive tasks so as not to drain the wearable device's
 battery.
 
-\subsection{Application Architecture}
-An Android Wear application is bundled with a mobile application. Each
-application has it's own \texttt{AndroidManifest.xml} file and
-\texttt{res/} directory, but must use the same application id such as
-\texttt{com.example.app}. Additionally, the wearable application must declare
-the following in it's manifest:
-\begin{lstlisting}[language=XML]
-<manifest ...>
-    ...
-
-    <!-- declare that this is a smartwatch application -->
-    <uses-feature
-        android:name="android.hardware.type.watch" />
-
-    <application ...>
-        ...
-    </application>
-</manifest>
-\end{lstlisting}
-
-The two applications are kept completely separated. As a result, the smartwatch
-app does not have access to resources or code of the mobile application and
-vise-versa. This can however be achieved using the Gradle build system and
-compiling one project as a module of the other project's \texttt{build.gradle}
-file. This can be especially useful when serializing objects and sending them
-from one application to the other at runtime and not having to duplicate the
-code.
 
 \subsection{Compatibility}
 Since Android Wear uses the same base version of Android as phones and tablets,
