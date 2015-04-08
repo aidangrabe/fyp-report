@@ -203,3 +203,27 @@ applications, they will not all be discussed. Most of the handheld UIs are based
 on the \texttt{ListView} however, and the wearable's screens are mostly based
 on the \texttt{WearableListView} or just the regular \texttt{ListView} in some
 places. These screens are also discussed in more detail in next section.
+
+\subsection{Compatibility}
+Since Android Wear uses the same base version of Android as phones and tablets,
+applications are written in Java and configured using XML just like on mobile.
+Most layouts and views work without any changes, however some input fields such
+as \texttt{EditText}s are useless since the screen is too small to comfortably
+fit a keyboard.\\
+Instead of requesting input from a user in the form of text fields, it is
+favourable to use speech recognition to allow the user to input textual data.
+Some layouts and views are specific to Android Wear such as
+\texttt{WatchViewStub}, which allows the developer to select different layouts
+for square and circular screens.
+
+At the time of writing there are multiple circular screen devices on the market
+such as the first circular smartwatch, the "Moto 360" from Motorola and the "G
+Watch R" from LG. By default, layouts will work on both rectangular and
+circular screens, but text/parts of the User Interface (UI) may be clipped
+depending on radius of the screen and the pixel density.
+
+When creating layouts and user interfaces for a wearable, special care must be
+taken to ensure buttons/targets are large enough to be easy to use without
+accidentally touching the wrong place, but also to ensure that all elements fit
+on the screen for both rectangular and circular screens. Oftern times this means
+using a different layout for rectangular screens and circular ones.

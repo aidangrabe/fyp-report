@@ -25,26 +25,7 @@ It is also recommended to use the mobile device for long running, or
 computationally intensive tasks so as not to drain the wearable device's
 battery.
 
-
-\subsection{Compatibility}
-Since Android Wear uses the same base version of Android as phones and tablets,
-applications are written in Java and configured using XML just like on mobile.
-Most layouts and views work without any changes, however some input fields such
-as \texttt{EditText}s are useless since the screen is too small to comfortably
-fit a keyboard.\\
-Instead of requesting input from a user in the form of text fields, it is
-favourable to use speech recognition to allow the user to input textual data.
-Some layouts and views are specific to Android Wear such as
-\texttt{WatchViewStub}, which allows the developer to select different layouts
-for square and circular screens.
-
-At the time of writing there are multiple circular screen devices on the market
-such as the first circular smartwatch, the "Moto 360" from Motorola and the "G
-Watch R" from LG. By default, layouts will work on both rectangular and
-circular screens, but text/parts of the User Interface (UI) may be clipped
-depending on radius of the screen and the pixel density.
-
-\subsection{Communication}
+\section{Communication}
 Android Wear uses Bluetooth LE (Low Energy) for communication between
 smartwatch and mobile device. Communications are secure and reliable using the
 official Android Wear API. manual cumminications over Bluetooth is still
