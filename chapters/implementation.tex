@@ -27,7 +27,7 @@ When it comes to Android Development, two main IDEs stand out:
 \item Eclipse\\
     Eclipse was the original official Android development environment and is
     still used by many developers. It uses a plugin called ADT
-    (Android Development Tools) to interact with ADB and manages SDKs etc.
+    (Android Development Tools) to interact with ADB and manage SDKs etc.
 \item Android Studio\\
     Android Studio is currently the official IDE for Android and comes with
     many improvements over Eclipse. It is built on top of the popular IntelliJ
@@ -67,7 +67,7 @@ handheld application, a few conditions must be met.
     As mentioned in previous chapters, the official Android Wear Companion App
     must be installed, and the wearable must connected and paired with the
     handheld through this app.
-\item Package name
+\item Package name\\
     Both the wearable and the handheld applications must use the same package
     name in their \texttt{AndroidManifest.xml} files. The APIs will not work
     correctly and communication will not occur between the applications if one
@@ -82,7 +82,7 @@ With Android Wear there are two main types of communication:
     device to another. The destination of the message must be known when
     sending.\\
     Messages are useful for RPC or a client-server messaging protocol.
-\item DataItems
+\item DataItems\\
     DataItems are blobs of data which when created are automatically synced
     across the Android Wear network and replicated on all connected nodes.
     DataItems are useful for ensuring data is kept the same on both handheld and
@@ -222,7 +222,7 @@ different actions on the handheld based on the path of the messages.
 \subsubsection{Receiving Messages}
 Sending messages from the handheld to the watch or vice-versa is only useful if
 the other side is listening for these messages. In order to perform actions or
-respond received messages, the device must register itself with the Android Wear
+respond to received messages, the device must register itself with the Android Wear
 API and implement a callback method for when a message is received.\\
 In order to start receiving messages from the counter-part application, the
 application must register itself as a listener to the \texttt{MessageApi}:
@@ -277,7 +277,7 @@ starting/stopping music playback.
 Previously we discussed sending messages and performing actions upon receiving
 them. Android Wear provides another form of communication allowing developers
 to synchronize data across both the handheld and wearable. Whenever the data is
-updated on one size, an event is triggered on the other notifying it of the
+updated on one side, an event is triggered on the other notifying it of the
 change.
 
 This is useful for sending images, or keeping data consistent across both
@@ -803,7 +803,7 @@ or activities.
 \subsection{Communication Threads}
 
 The Android Wear communication APIs described in previous sections are all
-carried asynchronously with callback methods called in background threads.
+carried out asynchronously with callback methods called in background threads.
 The APIs return a \texttt{PendingResult<T>} instance with the relevant
 results from the API call.
 
@@ -1076,7 +1076,7 @@ if (biggest > GESTURE_THRESHOLD) {
 The above method works fairly well for ignoring small movements and accidentally
 triggering a gesture, but if the user does a fast movement to trigger a gesture
 in one direction, an equal but opposite gesture will be triggered almost
-immediately after as the user's hand come to a stop. In order to ignore this
+immediately after as the user's hand comes to a stop. In order to ignore this
 second stopping gesture, a delay is used after registering the first gesture, so
 no gestures can be detected until after this delay. This prevents the pair of
 gestures from being detected together. Care must be taken to use a threshold
@@ -1117,11 +1117,11 @@ Log.d("DEBUG", "Gesture: " + gesture);
 \section{Notifications}
 
 Notifications are a key part of Android Wear as they are not applications which
-need to be launched by the user. They are a way of displaying small glanceable
+need to be launched by the user. They are a way of displaying short glanceable
 information to the user that can have certain quick-actions such as replying
 to a text message, or opening an application on the handheld in order to
 complete a larger action. Notifications are at the heart of what Android Wear
-is designed for and are easily created and displayed using the Android APIs.
+is all about and are easily created and displayed using the Android APIs.
 
 By default, a notification built for a handheld application will display on
 Android Wear without any modifications. They can however be "extended" to show
@@ -1170,7 +1170,7 @@ notificationManager.notify(notificationId, notificationBuilder.build());
 
 Here we can set the background of the notification which will be displayed on
 the wearable. This background will not get displayed on any handheld devices.
-By default adding actions to the notification will also work on the wearable,
+By default, adding actions to the notification will also work on the wearable,
 but sometimes it is desirable to show certain actions only on the wearable, such
 as "Open on phone". This action should not be displayed in the notification of
 the phone itself. This can be accomplished by using the \texttt{extend()} method
@@ -1199,7 +1199,7 @@ available sections of the app.
 
 The handheld application uses SQLite for it's database, and uses the open source
 Sugar ORM\footnote{Sugar ORM: http://satyan.github.io/sugar/} for it's
-Object-Relational mapping capabilities. This allows much easier storage of Java
+Object-Relational Mapping capabilities. This allows much easier storage of Java
 objects in a relational database and Sugar ORM provides much of the database
 boilerplate code through the use of Reflection.
 
@@ -1230,8 +1230,8 @@ The sections of the app are as follows:
 \item News\\
     This screen displays the recent news from the UCC website
     \footnote{UCC News page: http://www.ucc.ie/en/about/uccnews/} in the form
-    of a native Android list, the articles are shown when the article image or
-    headline is clicked by the user.
+    of a native Android RecyclerView, the articles are shown when the article
+    image or headline is clicked by the user.
 \item Campus Map\\
     This section is only contained on the wearable app and is designed to have
     the coordinates of the UCC campus preloaded onto the handheld, which then
@@ -1256,9 +1256,9 @@ Android Wear, the wearable can read and display the list of modules by calling
 which in this case is \texttt{"/modules/get"}.
 
 Although using this method to synchronize the modules to the wearable works,
-and works quite quickly as the module objects are small in sie and quick to
+and works quite quickly as the module objects are small in size and quick to
 transfer. It is not the most optimal method for syncing the modules. A better
-approach woould be to implement a database on the wearable device as well as the
+approach would be to implement a database on the wearable device as well as the
 handheld and only put the new module object into the data layer when it is
 created. This means that only one module object would be transfered when a new
 module is created rather than the entire list.
@@ -1269,7 +1269,8 @@ connection, and would also require the wearable application to be running a
 layer when the wearable app is not in the foreground. This is a lot of extra
 complexity for a list of modules, that realistically should never reach over
 10-15 modules. If the dataset was much larger, the more efficient solution
-would be a far better approach and would be a noticeably better user experience.
+would be a far better approach and would provide a noticeably better user
+experience, in terms of a more responsive UI.
 
 \subsection{To-Do List}
 The to-do list is implemented rather similarly to the Modules screen. The major
@@ -1378,19 +1379,28 @@ the changes immediately on both UIs.
 
 \subsection{Timetable}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{mobile-timetable.png}
+    \caption{Timetable screen}
+    \label{fig:mobile_timetable}
+\end{figure}
+
 The timetable screen displays the user's lectures for the week in the form of
-tabbed lists. Each day is its own tab and displays the days lectures in order
+tabbed lists (Figure \ref{fig:mobile_timetable}).
+Each day is its own tab and displays the days lectures in order
 of earliest first. New lectures can be created by pressing the Floating Action
 Button in the bottom right corner. Only days that have lectures are displayed in
-the timetable, that is if the user has not created lectures for Saturday and
+the timetable, that is, if the user has not created lectures for Saturday and
 Sunday, they will not appear on the screen.
 
 Each lecture is stored in the SQLite database using Sugar ORM. Using Sugar ORM
-is a very simple. In order for a Java object to be stored in the database using
+is very simple. In order for a Java object to be stored in the database using
 Sugar ORM, it must extend \texttt{SugarOrm<T>} where \texttt{T} is the class
 that will be stored. For example, the \texttt{Lecture} class looks something
 like this:
 
+\clearpage
 \begin{lstlisting}[language=Java]
 
 public class Lecture extends SugarRecord<Lecture> {
@@ -1424,8 +1434,8 @@ private String title;
 
 \texttt{Lecture} objects can now be stored by calling \texttt{lecture.save()}.
 In order to retrieve lectures from the database using the ORM, we can use
-\texttt{Lecture.findById(Lecture.class, id)} to find a particular lecture once
-it's id is known, or \texttt{Lecture.findAll(Lecture.class)} to list all
+\texttt{Lecture.findById( Lecture.class, id)} to find a particular lecture once
+it's id is known, or \texttt{Lecture.findAll( Lecture.class)} to list all
 lectures currently stored in the database.
 
 The timetable screen is unique to the handheld device and does not have any
@@ -1452,14 +1462,14 @@ each vertex animation begins a few milliseconds after the previous vertex's
 animation has begun.
 
 This custom view was created in the \texttt{common} module so that the view
-could be used on both the handheld and wearable device. The main reason for
+could be used on both the handheld and wearable devices. The main reason for
 the addition of this graph was to see how the wearable could handle custom views
 and animations. The animations run smoothly and without problem on both devices.
 
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.4\textwidth]{mobile-results.png}
+    \includegraphics[width=0.6\textwidth]{mobile-results.png}
     \caption{Custom Graph View on handheld}
     \label{fig:mobile_results}
 \end{figure}
@@ -1476,6 +1486,7 @@ class enables us to animate particular values from a start value to an end
 value. To animate the results, each vertex in the graph is set to show 50\% and
 is then animated to it's actual value.
 
+\clearpage
 \begin{lstlisting}[language=Java]
 
 public void animateValues() {
@@ -1531,11 +1542,12 @@ connection.
 
 The news screen first scrapes the UCC news page
 \footnote{UCC News page: http://www.ucc.ie/en/about/uccnews/} by downloading it,
-parsing it using the \texttt{JSoup} library to find the news article titles and
+parsing it using the \texttt{Jsoup}\footnote{Jsoup library: http://jsoup.org}
+library to find the news article titles and
 images. It then displays the articles in a list using the new
 \texttt{RecyclerView} which was introduced to Android in Lollipop and is
 designed as a more flexible and versatile \texttt{ListView}. It implements the
-\texttt{View Holder} pattern, making it more efficient by recyling (hence the
+\texttt{View Holder} pattern, making it more efficient by recycling (hence the
 name) views rather than inflating a new view from XML every time a new item
 appears on screen. The \texttt{RecyclerView} also has the added benefit of using
 \texttt{LayoutManager}s to decide where and how items should appear. This makes
@@ -1550,10 +1562,10 @@ the contents of the article.
 
 Android provides many ways of downloading content using Http requests. This
 project uses the open source
-Volley\footnote{Volley library: http://developer.android.com/training/volley/index.html}.
-This library makes downloading things very easy, without having to worry about
+Volley\footnote{Volley library: http://developer.android.com/training/volley/index.html}
+library. This library makes downloading things very easy, without having to worry about
 closing connections, or configuration changes causing the Activity to restart.
-Since Android does not allow network acticity on the main thread, network
+Since Android does not allow network activity on the main thread, network
 requests must be made on a background thread. For this reason many applications
 might use an \texttt{AsyncTask} to download content, but this may cause problems
 when the user rotates the phone, restarting the Activity and causing the 
@@ -1589,7 +1601,7 @@ mArticleRequest = MyVolley.getInstance(mContext).add(new StringRequest(
 
 \end{lstlisting}
 
-\texttt{MyVolley} is just a simple wrapper for Volley a \texttt{RequestQueue}.
+\texttt{MyVolley} is just a simple wrapper for a Volley \texttt{RequestQueue}.
 It is a singleton class that returns a single \texttt{RequestQueue} when 
 \texttt{getInstance()} is called. \texttt{RequestQueue} objects are used to
 queue downloads using Volley.\\
@@ -1668,7 +1680,7 @@ This service runs the \texttt{UccArticleFetcher} and downloads the articles
 from the UCC news page. It checks each article title and stores the most recent
 article's title in \texttt{SharedPreference}s. If the previously stored article
 title is different to the one just downloaded, a notification is shown to the
-user on both the handheld and wearable device. The wearable notifications
+user on both the handheld and wearable devices. The wearable notifications
 background is set to the image of the article
 (Figure \ref{fig:wearable_news_notification}) and a specific action
 (Figure \ref{fig:wearable_open_on_phone}) is shown
@@ -1711,7 +1723,7 @@ scrolled through both horizontally and vertically. Each page was displaying
 a chunk of the bitmap, but this view, since designed for wearables, behaved
 in an unfavourable way when scrolling vertically. In a grid, one might expect
 that when scrolling vertically, the column number would stay the same and the
-row number would change by 1. However with a \texttt{GridViewPager} the row
+row number would change by 1. However with a \texttt{GridViewPager} the column
 number resets to 0 when scrolling vertically, so it does not function exactly
 how one might think a grid would function. For this reason the custom view
 \texttt{BitmapRegionView} was created.
@@ -1856,7 +1868,7 @@ Lights Out
 is a puzzle game where the goal is to turn off all lights on the screen. It is
 a grid based game and so was a perfect fit for the square screen of the watch.
 However, on a circular watch screen the game is un-playable as the squares in
-the corners are truncated of screen and so cannot be clicked.
+the corners are truncated off screen and so cannot be clicked.
 
 The game was implemented using a Model View Controller (MVC) approach. The
 model is a simple \texttt{Tile} class consisting of the tile's position and
@@ -1941,7 +1953,7 @@ the controller. These \texttt{LinearLayouts} are then populated with custom
 buttons which extend the android \texttt{Button} class depending on how many
 columns the controller has specified. This allows the layout to be just as
 dynamic as the canvas-based view used for Lights Out, but with the added benefit
-of being aple to handle input/clicks for each individual button in the grid,
+of being able to handle input/clicks for each individual button in the grid,
 rather than having to figure out where the player clicked and decide which
 button was hit.
 
@@ -2094,7 +2106,7 @@ The controllers can send the following messages on their
 
 The final part of the project was the implementation of a custom watchface using
 the official Android Wear APIs. At the beginning of the project, these APIs were
-not finalized nor made made publicly available, so an attempt was made to use
+not finalized nor made publicly available, so an attempt was made to use
 whatever made the watchface work. A decent attempt was made, but did not follow
 the guidelines which were later released, and so the code was updated to follow
 these
@@ -2147,7 +2159,7 @@ programmer is left to implement much of the boilerplate code. An easier class
 to extend is the \texttt{CanvasWatchFaceService} which is also provided by
 Android Wear, but gives the programmer access to a \texttt{Canvas} object which
 can be drawn to for easy displaying of graphics. Other wise OpenGL would have
-to be used, which is a more powerful graphics API than canvas, but also has
+to be used, which is a more powerful graphics API than canvas, but also has a
 much steeper learning curve as it is much lower level.
 
 The \texttt{CanvasWatchFaceService} looks as follows:
@@ -2292,7 +2304,7 @@ screen. Instead, it must be done programatically. In order to achieve this, a
 custom \texttt{WindowInsetsListener} must be created. This listener will be
 given enough information to deterine the shape of the screen. This can be useful
 for the application to know, so it can draw things on a particular region of the
-canvas to endure that it is visible on all screen shapes. A custom listener is
+canvas to ensure that it is visible on all screen shapes. A custom listener is
 shown below:
 
 \begin{lstlisting}[language=Java]

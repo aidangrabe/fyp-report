@@ -19,7 +19,7 @@ results whilst also demonstrating some of the newer APIs available in Android
 This project provides an example of how to use the new Watchface APIs released
 by Google in January 2014. Previously, the APIs were undocumented but a working
 prototype was built in the Research Project and was converted to the new
-documented APIs in this project.
+documented APIs for this project.
 
 \end{enumerate}
 
@@ -66,20 +66,20 @@ transfer and install the wearable APK on the wearable device.
 
 In order for the two applications to communicate, they use the DataLayer
 provided by Android Wear. The DataLayer is accessed via a
-\texttt{GoogleApiClient} which can be used to connect Google various APIs,
+\texttt{GoogleApiClient} which can be used to connect Google's various APIs,
 wearable being one of them. The structure of the application is shown in Figure
 \ref{fig:app_structure}
 
 \subsection{Module Structure}
 
 An Android application is comprised of multiple modules. Most mobile
-applications wwould only contain a mobile module, but with the introduction of
+applications would only contain a mobile module, but with the introduction of
 Android TV, Auto and Wear, modules may be added to support each type of device.
 This project only caters for mobile and Android Wear and so consists of two
 main modules: one for the mobile application and one for the wearable
 application. Modules can also be added to share code between the other modules.
 In the case of this project a "common" module was created and added as a
-dependancy of the "mobile" and "wear" modules. This allows code as well as
+dependency of the "mobile" and "wear" modules. This allows code as well as
 resources such as images and layouts to be shared between the two modules.
 
 \begin{figure}
@@ -125,7 +125,7 @@ module follows the basic package structure as shown below:
 
 If a class is only ever used in a single module, it resides in that module. If
 a class needs to be used in both modules, it resides in the common module. This
-allows objects to be serialized across the connection and deserialized on the
+allows objects to be serialized across the connection and de-serialized on the
 other side.
 
 \section{Problem Analysis}
@@ -154,7 +154,7 @@ transfer the objects to the wearable when it comes back in range.
 
 The MessageApi does not guarantee reliability. In this case it is up to the
 programmer to handle the cases where messages are not delivered and resend them
-if neccessary. As a result, if a message needs to be sent reliably in this
+if necessary. As a result, if a message needs to be sent reliably in this
 project, it is sent using the DataApi. The MessageApi is kept for messages where
 reliability is not critical.
 
@@ -217,7 +217,7 @@ on the \texttt{ListView} however, and the wearable's screens are mostly based
 on the \texttt{WearableListView} or just the regular \texttt{ListView} in some
 places. These screens are also discussed in more detail in next section.
 
-\subsection{Compatibility}
+\subsection{UI Compatibility}
 Since Android Wear uses the same base version of Android as phones and tablets,
 applications are written in Java and configured using XML just like on mobile.
 Most layouts and views work without any changes, however some input fields such
@@ -233,10 +233,10 @@ At the time of writing there are multiple circular screen devices on the market
 such as the first circular smartwatch, the "Moto 360" from Motorola and the "G
 Watch R" from LG. By default, layouts will work on both rectangular and
 circular screens, but text/parts of the User Interface (UI) may be clipped
-depending on radius of the screen and the pixel density.
+depending on the radius of the screen and the pixel density.
 
 When creating layouts and user interfaces for a wearable, special care must be
 taken to ensure buttons/targets are large enough to be easy to use without
 accidentally touching the wrong place, but also to ensure that all elements fit
-on the screen for both rectangular and circular screens. Oftern times this means
+on the screen for both rectangular and circular screens. Often times this means
 using a different layout for rectangular screens and circular ones.

@@ -3,7 +3,7 @@
 Android Wear is a version of Google's Android operating system tailored for
 wearables. At the time of writing, Android Wear is only available for
 smartwatches, but one can assume that it will be extended to other wearable
-devices in the forseeable future.\\
+devices in the foreseeable future.\\
 Android Wear was announced on March 18, 2014 and the first publicly available
 devices were released on June 25, 2014 at Google I/O. These devices were the
 "LG G Watch" and the "Samsung Gear Live" (not to be confused with the
@@ -28,19 +28,19 @@ battery.
 \section{Communication}
 Android Wear uses Bluetooth LE (Low Energy) for communication between
 smartwatch and mobile device. Communications are secure and reliable using the
-official Android Wear API. manual cumminications over Bluetooth is still
+official Android Wear API. Manual communications over Bluetooth is still
 possible, but not recommended\footnote{Google Developers: http://goo.gl/Ke7MAu}.
 
 When communicating between mobile and watch, every communication has a URI
 attached to it. Each URI consists of a base which is specific to Android Wear
-and the current application running, and a path allows the developer to
+and the current application running, and a path that allows the developer to
 differentiate between different communications.
 
 The communications API consists of three different methods:
 \begin{enumerate}
 
 \item Messages\\
-Messages use the \texttt{MessageAPI} and contain small amounts of data. Messages
+Messages use the \texttt{MessageApi} and contain small amounts of data. Messages
 are especially useful for Remote Procedure Calls (RPC) or for implementing a
 request-response model in an application. Once a message is sent/received, it
 is destroyed.
@@ -89,7 +89,7 @@ Debugging Bridge (ADB) can access the device:
 \begin{enumerate}
 
 \item USB\\
-    This is the most straight-forward method for debugging and is a simple as
+    This is the most straight-forward method for debugging and is as simple as
     connecting the device to the development computer and ensuring the device is
     visible to ADB and has the correct permissions to communicate with it.
 \item Bluetooth\\
