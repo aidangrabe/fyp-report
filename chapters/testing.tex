@@ -30,6 +30,37 @@ can be performed on Android views and state using Android's built-in testing
 framework. This framework allows you to test whether views are visible, input
 was received and things a unit test might not be able to test.
 
+Android unit testing is made difficult because a DVM (Dalvik Virtual Machine) is
+required to execute Android code, or code that refers to the Android SDK. This
+code cannot be executed on the regular JVM (Java Virtual Machine). The JVM
+requires .class files to execute, but Android code is stored in .dex files for
+the DVM. The only way JUnit can be used to unit test Android code, is if the
+business logic is separated from the UI logic. This way the business logic can
+be saved as regular Java in .class files and tested on the JVM.
+
+Third-party testing frameworks also exist which do allow proper unit testing.
+One such framework called
+Robolectric\footnote{Robolectric: http://robolectric.org/} was
+used for unit testing Android specific code.\\
+Robolectric allows Android code to be run and tested without deploying the
+Android emulators. Normally in order to use or test code that uses the Android
+SDK, an emulator would have to be instatiated and the code would have to wait
+until the emulator is ready to start execution of the code. This is less than
+ideal for automated testing. Robolectric allows the tests to run directly in the
+IDE without the need of the emulator. It achieves this by implementing standard
+JVM code for the Android SDK classes. This allows them to be run and used on the
+regular JVM as opposed to the DVM. Starting a JVM on a workstation is much
+quicker than booting up an emulator and starting a DVM on it.
+
+Other frameworks such as
+Mockito\footnote{Mockito: http://site.mockito.org/} or 
+EasyMock\footnote{EasyMock: http://easymock.org/} work by
+mocking or stubbing-out different classes. Data structures and databases can
+be mocked to give the same effect as a normal data structure or database but
+without the underlying complexity behind them. To use an analogy, a mock object
+simulates the required behaviour of an object for a specific test the same way a
+crash-test dummy simulates a human body in a crash test for a vehicle.
+
 \section{Performance Testing}
 The performance of the Student Application is not too critical as the
 application does not undertake any heavy duty or long processing tasks. The only

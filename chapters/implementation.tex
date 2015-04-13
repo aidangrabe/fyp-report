@@ -2351,7 +2351,8 @@ for (int i = 1; i <= numNumbers; i++) {
 \subsection{Calendar Events}
 
 The custom watchface developed for this project displays the user's calendar
-events along the circumference of the watchface as long coloured arcs. Howevever
+events along the circumference of the watchface as long coloured arcs
+(Figure \ref{fig:calendar_watchface}). However
 the wearable device does not directly have access to the handheld's calendar.
 As a result there are two main ways to get the calendar events to the watch.
 \begin{enumerate}
@@ -2367,7 +2368,7 @@ As a result there are two main ways to get the calendar events to the watch.
 \begin{figure}
     \centering
     \includegraphics[width=0.4\textwidth]{calendar-watchface.png}
-    \caption{The custom Watchface in action}
+    \caption{The custom Watchface with the events as coloured arcs}
     \label{fig:calendar_watchface}
 \end{figure}
 
@@ -2375,3 +2376,15 @@ Combining the features described above, the custom watchface retrieves the
 user's events from the handheld, wraps them into objects and displays them on
 the canvas using the standard Canvas APIs. Figure \ref{fig:calendar_watchface}
 depicts the final outcome.
+
+\subsection{Calendar WatchFace}
+
+An extension of the watchface developed for this project was published to the
+Google Play
+Store\footnote{Calendar WatchFace: https://play.google.com/store/apps/details?id=com.aidangrabe.customwatchface}.
+This app is built on the same source code as the watchface for this project, but
+also adds many features such as a settings application for mobile that allows
+the users to customize different settings for the watchface such as the
+thickness of the hands and the background image for the clock face. At the time
+of writing the watchface has been purchased by 18 people and has a rating of 4.3
+in the Play Store.
