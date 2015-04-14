@@ -42,18 +42,49 @@ The project demonstrated the use of many different tools and technologies:
     communication between handheld and wearable possible.
 \item Bluetooth sockets were used to work around the one-to-one device
     restriction of Android Wear.
-\item AppCompat libraries were used to ensure compatability with older versions
+\item AppCompat libraries were used to ensure compatibility with older versions
     of Android.
 \item Android L specific features were used such as colouring the status bar.
 \end{enumerate}
 
-\section{Future Work}
+\section{Android Wear Conclusion}
 
+Android Wear as a platform is still very new and developers have yet to find a
+really useful function that a smartphone could not perform on its own. Gestures
+seem to be one of the main benefits of a smartwatch, but the APIs have no 
+built-in support for detecting them.
+
+Due to the small screen size of the smartwatches, and the fact that only one
+hand can ever be used to touch the screen, navigating menus in applications can
+be awkward and since only so much text can be displayed on the small screen, a
+user is usually better off reaching into their pocket and launching the mobile
+application instead. A smartwatch is only useful for glanceable information such
+as notifications and custom watchfaces which display useful information all the
+time.
+
+In it's current form Android Wear does not make launching apps easy or
+intuitive. At the time of writing, in order to launch an app the user must touch
+the screen, scroll to the "Start..." menu item, and then scroll to the desired
+app and touch it to launch. It would be just as quick to launch the app on a
+phone, thus defeating the purpose of the smartwatch.\\
+Apps can also be launched by voice, but speech recognition can be awkward in
+crowded places and inaccurate when background noise is present, or if the user
+has an unusual accent.
+
+Current generation devices also have very short battery life. Devices usually
+only last a single day per charge, depending on usage. This is a big change for
+someone who wears a regular watch on a day to day basis which would not need to
+be charged for months or years. As mentioned in a previous section, the Pebble
+watch uses an e-display allowing it to last for much longer on a single charge.
+Perhaps Android Wear could support this display technology in the future in
+order to compete with Pebble's battery life.
+
+\section{Future of Android Wear}
 At the time of writing, Android Wear was a brand new technology in it's infancy.
-The project started using Android 4.4W and in the space of the short development
-window for this project, has already moved up to Android 5.0.2. As a result many
+When development of the project began, Android Wear was at version 4.4W and over
+the space of a few months has already reached version 5.0.2. As a result many
 changes will be made to the APIs in a short space of time. Here are some changes
-that may be possible in the future or just for further development:
+that one might expect in future releases:
 
 \begin{enumerate}
 \item Support for multiple wearable devices to connect to a single phone
@@ -65,14 +96,35 @@ that may be possible in the future or just for further development:
     does not support access to this technology, but will be implementing it in
     a later iteration. This means that much of the code in this project that
     accesses internet resources could be re-written to download the resource
-    directly to the wearable isntead of using the handheld as a proxy.
+    directly to the wearable instead of using the handheld as a proxy.
+\item Support for other wearables such as smart-shoes, not just smartwatches.
+\item Gesture based navigation. As it is, a touchscreen requires the use of two
+    hands to interact with the smartwatch, gesture-based navigation would allow
+    single handed use of the device, such as tilting your wrist to scroll or
+    shaking the device to return to the homescreen etc.
+\end{enumerate}
+
+\section{Future Work}
+
+This section suggests possible improvements or additional work that could be
+undertaken on the Student Application. This work was not completed in the
+original project due to time constraints.
+
+\begin{enumerate}
+\item the timetable shown on mobile could have a screen on the wearable showing
+    the user's upcoming lectures.
+\item a custom watchface could also be created specifically for the Student
+    Application showing the user's upcoming lectures and outstanding to-do items
+    so the user can see them at a quick glance at their watch.
+\item Android Wear will probably add a lot more features in the future, so these
+    features could be displayed or demonstrated in the app.
 \item More games could be added to the student application. Currently there is
     only one game for the handheld device, and users may want a couple more.
 \item the Student Application could be extended to support devices without
     wearables. Currently the application is only available to devices using 
     Android 4.3+. This is because it is Android Wear's minimum requirement.
     However many of the features of the handheld application do not require
-    a wearable, and so the mimimum version could be lowered and
+    a wearable, and so the minimum version could be lowered and
     wearable-specific content could be hidden to those users.
 \item Other wearable devices may be announced and supported by Android Wear,
     such as smart-shoes, smart-necklace etc. These devices may run Android Wear
